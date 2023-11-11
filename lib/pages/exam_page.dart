@@ -1,6 +1,10 @@
+import 'dart:math';
+
 import 'package:flashcards/flashcards/flashcard.dart';
 import 'package:flashcards/flashcards/flashcard_widget.dart';
 import 'package:flashcards/utils.dart';
+import 'package:flashcards/widgets/default_body.dart';
+import 'package:flashcards/widgets/grid_item.dart';
 import 'package:flutter/material.dart';
 
 enum ExamItemState { none, correct, wrong }
@@ -8,6 +12,12 @@ enum ExamItemState { none, correct, wrong }
 class ExamItem extends Flashcard {
   ExamItemState state = ExamItemState.none;
   ExamItem({required Flashcard flashcard})
+      : super(question: flashcard.question, answer: flashcard.answer);
+}
+
+class WrongAnswer extends Flashcard {
+  final String userAnswer;
+  WrongAnswer({required Flashcard flashcard, required this.userAnswer})
       : super(question: flashcard.question, answer: flashcard.answer);
 }
 
@@ -29,6 +39,7 @@ class _ExamPageState extends State<ExamPage> {
   final _controller = PageController();
   late List<GlobalKey<FormState>> _formKeys;
   late List<TextEditingController> _textFields;
+  final List<WrongAnswer> _wrongAnswers = [];
   var answered = false;
   var score = 0;
 
@@ -63,9 +74,81 @@ class _ExamPageState extends State<ExamPage> {
             (isAnswerCorrect) ? ExamItemState.correct : ExamItemState.wrong;
         if (isAnswerCorrect) {
           score += 1;
+        } else {
+          _wrongAnswers.add(WrongAnswer(
+              flashcard: examItem, userAnswer: _textFields[currentPage].text));
         }
         answered = true;
       });
+    }
+  }
+
+  void _tryNextPage() {
+    if (_controller.page!.toInt() < widget.examItems.length - 1) {
+      setState(() {
+        answered = false;
+      });
+      _controller.nextPage(
+          duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+    } else {
+      showDialog(
+          context: context,
+          builder: (context) => Dialog(
+                child: Padding(
+                  padding: const EdgeInsets.all(25.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Test finished",
+                        style: Theme.of(context).textTheme.headlineLarge,
+                      ),
+                      addSpacing(height: 15),
+                      Text(
+                        "Your score: $score",
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                      addSpacing(height: 15),
+                      const SizedBox(
+                        width: 300,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Text("Correct answer"),
+                            Text("Your answer"),
+                          ],
+                        ),
+                      ),
+                      addSpacing(height: 15),
+                      SizedBox(
+                        width: 300,
+                        height: min(_wrongAnswers.length * 30, 150),
+                        child: ListView.builder(
+                          itemCount: _wrongAnswers.length,
+                          itemBuilder: (context, index) {
+                            final data = _wrongAnswers[index];
+                            return Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  Text(data.answer),
+                                  Text(data.userAnswer)
+                                ]);
+                          },
+                        ),
+                      ),
+                      addSpacing(height: 15),
+                      ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Navigator.pop(context);
+                          },
+                          child: const Text("Return"))
+                    ],
+                  ),
+                ),
+              ));
     }
   }
 
@@ -78,14 +161,7 @@ class _ExamPageState extends State<ExamPage> {
             icon: const Icon(Icons.check))
         : IconButton(
             onPressed: () {
-              if (_controller.page!.toInt() < widget.examItems.length - 1) {
-                setState(() {
-                  answered = false;
-                });
-                _controller.nextPage(
-                    duration: const Duration(milliseconds: 1000),
-                    curve: Curves.easeInOut);
-              }
+              _tryNextPage();
             },
             icon: const Icon(Icons.arrow_forward_ios_rounded));
   }
@@ -102,7 +178,7 @@ class _ExamPageState extends State<ExamPage> {
         // iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onPrimary),
         // backgroundColor: Theme.of(context).colorScheme.primary,
       ),
-      body: Center(
+      body: DefaultBody(
         child: PageView(
           physics: const NeverScrollableScrollPhysics(),
           controller: _controller,
@@ -137,7 +213,7 @@ class _ExamPageState extends State<ExamPage> {
                       answer: e.answer,
                       showFront: e.state == ExamItemState.none,
                       backColor: e.state == ExamItemState.wrong
-                          ? Colors.redAccent
+                          ? const Color.fromARGB(255, 255, 4, 0)
                           : Colors.lightGreen,
                     ),
                   ),

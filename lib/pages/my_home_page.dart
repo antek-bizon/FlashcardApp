@@ -1,15 +1,17 @@
 import 'dart:convert';
 
 import 'package:flashcards/flashcards/flashcard.dart';
+import 'package:flashcards/model/theme.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/widgets/add_dialog.dart';
 import 'package:flashcards/pages/flashcard_group_page.dart';
+import 'package:flashcards/widgets/default_body.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MyHomePage extends StatefulWidget {
   final String title = "Flashcards App";
-
   const MyHomePage({super.key});
 
   @override
@@ -17,10 +19,11 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final String jsonEntry = "groupNames";
   final _key = GlobalKey<ScaffoldState>();
-  late Future<Map<String, List<Flashcard>>> _data;
+
+  final jsonEntry = "groupNames";
   final _prefData = SharedPreferences.getInstance();
+  late Future<Map<String, List<Flashcard>>> _data;
 
   @override
   void initState() {
@@ -83,15 +86,32 @@ class _MyHomePageState extends State<MyHomePage> {
             ));
   }
 
+  Future<void> _removeGroup(BuildContext context,
+      Map<String, List<Flashcard>> data, String key) async {
+    setState(() {
+      Navigator.pop(context);
+      data.remove(key);
+    });
+    final prefs = await _prefData;
+    await Future.wait([
+      prefs.setStringList(jsonEntry, [...data.keys]),
+      prefs.remove(key)
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       key: _key,
       appBar: AppBar(
-        // backgroundColor: Theme.of(context).colorScheme.primary,
+        automaticallyImplyLeading: false,
+        leading: BackButton(
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Text(
           widget.title,
-          // style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
         ),
       ),
       bottomNavigationBar: BottomAppBar(
@@ -103,14 +123,17 @@ class _MyHomePageState extends State<MyHomePage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             IconButton(
-              onPressed: () {},
+              onPressed: () {
+                _key.currentState!.openDrawer();
+              },
               icon: const Icon(Icons.settings),
             ),
             addSpacing(width: 30),
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.disc_full_rounded),
-            )
+            addSpacing(width: 30),
+            // IconButton(
+            //   onPressed: () {},
+            //   icon: const Icon(Icons.disc_full_rounded),
+            // )
           ],
         ),
       ),
@@ -122,7 +145,8 @@ class _MyHomePageState extends State<MyHomePage> {
         child: const Icon(Icons.add),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      body: Center(
+      extendBody: true,
+      body: DefaultBody(
         child: FutureBuilder(
           future: _data,
           builder: (context, snapshot) {
@@ -135,36 +159,37 @@ class _MyHomePageState extends State<MyHomePage> {
                   final data = snapshot.data;
                   if (data == null) return ListView();
 
-                  return ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                      scrollDirection: Axis.vertical,
-                      itemCount: data.length,
-                      itemBuilder: (context, index) {
-                        final item = data.entries.elementAt(index);
+                  return SafeArea(
+                    child: ListView.builder(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: MediaQuery.of(context).size.width *
+                                MediaQuery.of(context).size.width /
+                                10000),
+                        scrollDirection: Axis.vertical,
+                        itemCount: data.length,
+                        itemBuilder: (context, index) {
+                          final item = data.entries.elementAt(index);
 
-                        return Card(
-                          child: ListTile(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => FlashcardGroupPage(
-                                    groupName: item.key,
-                                    // flashcardGroup: item.value,
-                                    onDelete: () {
-                                      setState(() {
-                                        Navigator.pop(context);
-                                        data.remove(item.key);
-                                      });
-                                    },
+                          return Card(
+                            child: ListTile(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FlashcardGroupPage(
+                                      groupName: item.key,
+                                      // flashcardGroup: item.value,
+                                      onDelete: () =>
+                                          _removeGroup(context, data, item.key),
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                            title: Text(item.key),
-                          ),
-                        );
-                      });
+                                );
+                              },
+                              title: Text(item.key),
+                            ),
+                          );
+                        }),
+                  );
                 }
               case ConnectionState.none:
               case ConnectionState.waiting:
@@ -173,6 +198,49 @@ class _MyHomePageState extends State<MyHomePage> {
           },
         ),
       ),
+      drawerEnableOpenDragGesture: false,
+      drawer: Drawer(
+        child: ListView(
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+              ),
+              child: Text(
+                'Menu',
+                style: TextStyle(
+                    color: theme.colorScheme.onPrimaryContainer, fontSize: 30),
+              ),
+            ),
+            Consumer<ThemeModel>(
+              builder: (context, value, child) => ListTile(
+                  title: const Text('Theme Selection'),
+                  subtitle: DropdownButton<ThemeMode>(
+                    alignment: Alignment.center,
+                    borderRadius: BorderRadius.circular(30),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+                    value: value.mode,
+                    items: _dropdownMenuItems(),
+                    onChanged: (ThemeMode? mode) {
+                      if (mode == null) return;
+                      value.selectTheme(mode);
+                    },
+                  )),
+            ),
+          ],
+        ),
+      ),
     );
+  }
+
+  List<DropdownMenuItem<ThemeMode>> _dropdownMenuItems() {
+    return ThemeMode.values.map((ThemeMode theme) {
+      return DropdownMenuItem(
+        alignment: Alignment.center,
+        value: theme,
+        child: Text(theme.toString().split('.')[1]),
+      );
+    }).toList();
   }
 }

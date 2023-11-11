@@ -66,13 +66,13 @@ class _AddGroupDialogState extends State<AddGroupDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  TextButton(
+                  ElevatedButton(
                     onPressed: () {
                       Navigator.pop(context);
                     },
                     child: const Text("Cancel"),
                   ),
-                  TextButton(
+                  ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
                           widget.onAdd(_groupNameField.text);
@@ -170,13 +170,13 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  TextButton(
+                  ElevatedButton(
                     onPressed: () {
                       Navigator.pop(context);
                     },
                     child: const Text("Cancel"),
                   ),
-                  TextButton(
+                  ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
                           widget.onAdd(_questionField.text, _answerField.text);

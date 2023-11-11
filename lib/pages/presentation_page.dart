@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flashcards/flashcards/flashcard.dart';
 import 'package:flashcards/flashcards/flashcard_widget.dart';
 import 'package:flashcards/utils.dart';
+import 'package:flashcards/widgets/default_body.dart';
 import 'package:flutter/material.dart';
 
 class PresentationPage extends StatefulWidget {
@@ -23,6 +24,16 @@ class _PresentationPageState extends State<PresentationPage> {
     super.dispose();
   }
 
+  void _previousPage() {
+    _controller.previousPage(
+        duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+  }
+
+  void _nextPage() {
+    _controller.nextPage(
+        duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,7 +41,7 @@ class _PresentationPageState extends State<PresentationPage> {
           // iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onPrimary),
           // backgroundColor: Theme.of(context).colorScheme.primary,
           ),
-      body: Center(
+      body: DefaultBody(
         child: PageView(
           controller: _controller,
           children: widget.flashcards
@@ -43,26 +54,15 @@ class _PresentationPageState extends State<PresentationPage> {
         ),
       ),
       bottomNavigationBar: BottomAppBar(
-        // color: Colors.black38,
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           IconButton(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              // color: Theme.of(context).colorScheme.onPrimary,
-              onPressed: () {
-                _controller.previousPage(
-                    duration: const Duration(milliseconds: 500),
-                    curve: Curves.easeInOut);
-              },
+              onPressed: _previousPage,
               icon: const Icon(Icons.arrow_back_ios_rounded)),
           addSpacing(width: min(MediaQuery.of(context).size.width * 0.2, 100)),
           IconButton(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              // color: Theme.of(context).colorScheme.onPrimary,
-              onPressed: () {
-                _controller.nextPage(
-                    duration: const Duration(milliseconds: 500),
-                    curve: Curves.easeInOut);
-              },
+              onPressed: _nextPage,
               icon: const Icon(Icons.arrow_forward_ios_rounded))
         ]),
       ),

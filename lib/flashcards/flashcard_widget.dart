@@ -45,8 +45,10 @@ class FlashcardDraft extends StatelessWidget {
   final bool showFront;
   final Color backColor;
 
-  Color _sideColor() {
-    return (showFront) ? Colors.orangeAccent : backColor;
+  Color _sideColor(BuildContext context) {
+    return Color.lerp((showFront) ? Colors.blueAccent : backColor,
+            Theme.of(context).colorScheme.secondaryContainer, 0.35) ??
+        Colors.orangeAccent;
   }
 
   String _sideTitle() {
@@ -62,12 +64,15 @@ class FlashcardDraft extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
-        color: _sideColor(),
+        color: _sideColor(context),
         alignment: Alignment.center,
         child: Column(children: [
           Padding(
             padding: const EdgeInsets.only(top: 30, bottom: 20),
-            child: Text(_sideTitle()),
+            child: Text(
+              _sideTitle(),
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
           ),
           const Divider(
             color: Colors.black54,
