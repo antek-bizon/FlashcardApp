@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flashcards/flashcards/flashcard.dart';
+import 'package:flashcards/model/db.dart';
 import 'package:flashcards/model/theme.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/widgets/add_dialog.dart';
@@ -8,7 +9,6 @@ import 'package:flashcards/pages/flashcard_group_page.dart';
 import 'package:flashcards/widgets/default_body.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class MyHomePage extends StatefulWidget {
   final String title = "Flashcards App";
@@ -20,83 +20,57 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final _key = GlobalKey<ScaffoldState>();
-
-  final jsonEntry = "groupNames";
-  final _prefData = SharedPreferences.getInstance();
-  late Future<Map<String, List<Flashcard>>> _data;
+  final _refreshKey = GlobalKey<RefreshIndicatorState>();
+  String? _tooltip = "Logout";
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _data = _prefData.then(_getFlashcardGroups);
+    _fetchGroups();
   }
 
-  Map<String, List<Flashcard>> _getFlashcardGroups(SharedPreferences pref) {
-    final map = <String, List<Flashcard>>{};
-    final groupNames = pref.getStringList(jsonEntry) ?? [];
-
-    for (var groupName in groupNames) {
-      final flashcardsJson = pref.getString(groupName);
-      if (flashcardsJson != null) {
-        final flashcards = (jsonDecode(flashcardsJson) as List)
-            .map(((e) => Flashcard(
-                question: e["question"],
-                answer: e["answer"],
-                image: e["image"])))
-            .toList();
-
-        map[groupName] = flashcards;
-      } else {
-        map[groupName] = [];
-      }
-    }
-
-    return map;
-  }
-
-  Future<void> _addGroup(String key) async {
-    final prefs = await _prefData;
-    final data = await _data;
+  set loading(bool value) {
     setState(() {
-      final newKeys = [...data.keys, key];
-      prefs.setStringList(jsonEntry, newKeys).then((success) {
-        data[key] = List.empty(growable: true);
-      });
+      _isLoading = value;
     });
+  }
+
+  Future<Map<String, FlashcardGroupOptions>> _fetchAllGroups() async {
+    // await Future.delayed(const Duration(seconds: 2));
+    return Provider.of<DatabaseModel>(listen: false, context)
+        .getFlashcardGroups();
+  }
+
+  Future<void> _fetchGroups() async {
+    loading = true;
+    await _fetchAllGroups();
+    loading = false;
+  }
+
+  Future<void> _addGroup(String name) async {
+    loading = true;
+    await Provider.of<DatabaseModel>(listen: false, context)
+        .addFlashcardGroup(name);
+    await _fetchAllGroups();
+    loading = false;
   }
 
   void _showAddDialog(BuildContext context) {
     showDialog<String>(
         context: context,
-        builder: (BuildContext context) => FutureBuilder(
-              future: _data,
-              builder: (context, snapshot) {
-                switch (snapshot.connectionState) {
-                  case ConnectionState.active:
-                  case ConnectionState.done:
-                    return AddGroupDialog(
-                        existingGroups:
-                            snapshot.data?.keys.toSet() ?? <String>{},
-                        onAdd: _addGroup);
-                  case ConnectionState.waiting:
-                  case ConnectionState.none:
-                    return const CircularProgressIndicator();
-                }
-              },
-            ));
+        builder: (BuildContext context) => Consumer<DatabaseModel>(
+            builder: (context, db, _) => AddGroupDialog(
+                existingGroups: db.flashcardGroups.keys.toSet(),
+                onAdd: _addGroup)));
   }
 
-  Future<void> _removeGroup(BuildContext context,
-      Map<String, List<Flashcard>> data, String key) async {
-    setState(() {
-      Navigator.pop(context);
-      data.remove(key);
-    });
-    final prefs = await _prefData;
-    await Future.wait([
-      prefs.setStringList(jsonEntry, [...data.keys]),
-      prefs.remove(key)
-    ]);
+  Future<void> _removeGroup(BuildContext context, String key) async {
+    loading = true;
+    await Provider.of<DatabaseModel>(listen: false, context)
+        .removeFlashcardGroup(key);
+    await _fetchAllGroups();
+    loading = false;
   }
 
   @override
@@ -107,8 +81,15 @@ class _MyHomePageState extends State<MyHomePage> {
       key: _key,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        leading: BackButton(
-          onPressed: () => Navigator.of(context).pop(),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: _tooltip,
+          onPressed: () {
+            setState(() {
+              _tooltip = null;
+            });
+            Provider.of<DatabaseModel>(context, listen: false).logout();
+          },
         ),
         title: Text(
           widget.title,
@@ -129,11 +110,10 @@ class _MyHomePageState extends State<MyHomePage> {
               icon: const Icon(Icons.settings),
             ),
             addSpacing(width: 30),
-            addSpacing(width: 30),
-            // IconButton(
-            //   onPressed: () {},
-            //   icon: const Icon(Icons.disc_full_rounded),
-            // )
+            IconButton(
+              onPressed: () => _refreshKey.currentState?.show(),
+              icon: const Icon(Icons.replay_outlined),
+            )
           ],
         ),
       ),
@@ -147,32 +127,30 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       extendBody: true,
       body: DefaultBody(
-        child: FutureBuilder(
-          future: _data,
-          builder: (context, snapshot) {
-            switch (snapshot.connectionState) {
-              case ConnectionState.active:
-              case ConnectionState.done:
-                if (snapshot.hasError) {
-                  return Text("Error: ${snapshot.error}");
-                } else {
-                  final data = snapshot.data;
-                  if (data == null) return ListView();
+        child: RefreshIndicator(
+          key: _refreshKey,
+          onRefresh: _fetchGroups,
+          backgroundColor: theme.colorScheme.primary,
+          color: theme.colorScheme.onPrimary,
+          strokeWidth: 4.0,
+          child: Consumer<DatabaseModel>(builder: (context, db, _) {
+            final items = db.flashcardGroups.entries.toList(growable: false);
 
-                  return SafeArea(
-                    child: ListView.builder(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: MediaQuery.of(context).size.width *
-                                MediaQuery.of(context).size.width /
-                                10000),
-                        scrollDirection: Axis.vertical,
-                        itemCount: data.length,
-                        itemBuilder: (context, index) {
-                          final item = data.entries.elementAt(index);
+            return SafeArea(
+              child: ListView.builder(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: MediaQuery.of(context).size.width *
+                          MediaQuery.of(context).size.width /
+                          10000),
+                  scrollDirection: Axis.vertical,
+                  itemCount: db.flashcardGroups.length,
+                  itemBuilder: (context, index) {
+                    final item = items[index];
 
-                          return Card(
-                            child: ListTile(
-                              onTap: () {
+                    return Card(
+                      child: ListTile(
+                        onTap: (!_isLoading)
+                            ? () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -180,22 +158,18 @@ class _MyHomePageState extends State<MyHomePage> {
                                       groupName: item.key,
                                       // flashcardGroup: item.value,
                                       onDelete: () =>
-                                          _removeGroup(context, data, item.key),
+                                          _removeGroup(context, item.key),
                                     ),
                                   ),
                                 );
-                              },
-                              title: Text(item.key),
-                            ),
-                          );
-                        }),
-                  );
-                }
-              case ConnectionState.none:
-              case ConnectionState.waiting:
-                return const CircularProgressIndicator();
-            }
-          },
+                              }
+                            : null,
+                        title: Text(item.key),
+                      ),
+                    );
+                  }),
+            );
+          }),
         ),
       ),
       drawerEnableOpenDragGesture: false,

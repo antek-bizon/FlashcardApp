@@ -4,7 +4,6 @@ import 'package:flashcards/flashcards/flashcard.dart';
 import 'package:flashcards/flashcards/flashcard_widget.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/widgets/default_body.dart';
-import 'package:flashcards/widgets/grid_item.dart';
 import 'package:flutter/material.dart';
 
 enum ExamItemState { none, correct, wrong }
