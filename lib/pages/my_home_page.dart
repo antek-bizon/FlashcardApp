@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:flashcards/flashcards/flashcard.dart';
 import 'package:flashcards/model/db.dart';
 import 'package:flashcards/model/theme.dart';
 import 'package:flashcards/utils.dart';
@@ -20,9 +17,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final _key = GlobalKey<ScaffoldState>();
-  final _refreshKey = GlobalKey<RefreshIndicatorState>();
   String? _tooltip = "Logout";
-  bool _isLoading = false;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -36,7 +32,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Future<Map<String, FlashcardGroupOptions>> _fetchAllGroups() async {
+  Future<void> _fetchAllGroups() async {
     // await Future.delayed(const Duration(seconds: 2));
     return Provider.of<DatabaseModel>(listen: false, context)
         .getFlashcardGroups();
@@ -69,7 +65,18 @@ class _MyHomePageState extends State<MyHomePage> {
     loading = true;
     await Provider.of<DatabaseModel>(listen: false, context)
         .removeFlashcardGroup(key);
+    if (context.mounted) {
+      await Navigator.maybePop(context);
+    }
     await _fetchAllGroups();
+    loading = false;
+  }
+
+  Future<void> _uploadToServer(String name) async {
+    loading = true;
+    final db = Provider.of<DatabaseModel>(listen: false, context);
+    await db.addFlashcardGroup(name);
+    print(await db.uploadGroupItems(name));
     loading = false;
   }
 
@@ -111,7 +118,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             addSpacing(width: 30),
             IconButton(
-              onPressed: () => _refreshKey.currentState?.show(),
+              onPressed: _fetchGroups,
               icon: const Icon(Icons.replay_outlined),
             )
           ],
@@ -127,13 +134,14 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       extendBody: true,
       body: DefaultBody(
-        child: RefreshIndicator(
-          key: _refreshKey,
-          onRefresh: _fetchGroups,
-          backgroundColor: theme.colorScheme.primary,
-          color: theme.colorScheme.onPrimary,
-          strokeWidth: 4.0,
-          child: Consumer<DatabaseModel>(builder: (context, db, _) {
+        child: Consumer<DatabaseModel>(
+          builder: (context, db, _) {
+            if (_isLoading) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+
             final items = db.flashcardGroups.entries.toList(growable: false);
 
             return SafeArea(
@@ -149,27 +157,35 @@ class _MyHomePageState extends State<MyHomePage> {
 
                     return Card(
                       child: ListTile(
-                        onTap: (!_isLoading)
-                            ? () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => FlashcardGroupPage(
-                                      groupName: item.key,
-                                      // flashcardGroup: item.value,
-                                      onDelete: () =>
-                                          _removeGroup(context, item.key),
+                          onTap: (!_isLoading)
+                              ? () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => FlashcardGroupPage(
+                                        groupName: item.key,
+                                        // flashcardGroup: item.value,
+                                        onDelete: () =>
+                                            _removeGroup(context, item.key),
+                                      ),
                                     ),
-                                  ),
-                                );
-                              }
-                            : null,
-                        title: Text(item.key),
-                      ),
+                                  );
+                                }
+                              : null,
+                          title: Text(item.key),
+                          trailing: (item.value.id != null)
+                              ? const IconButton(
+                                  onPressed: null,
+                                  icon: Icon(Icons.cloud_done_outlined))
+                              : IconButton(
+                                  onPressed: () {
+                                    _uploadToServer(item.key);
+                                  },
+                                  icon: const Icon(Icons.cloud_off_outlined))),
                     );
                   }),
             );
-          }),
+          },
         ),
       ),
       drawerEnableOpenDragGesture: false,

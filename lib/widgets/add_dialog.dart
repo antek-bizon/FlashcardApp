@@ -1,7 +1,10 @@
 import 'dart:math';
 
+import 'package:flashcards/flashcards/flashcard.dart';
+import 'package:flashcards/model/db.dart';
 import 'package:flutter/material.dart';
 import 'package:form_builder_image_picker/form_builder_image_picker.dart';
+import 'package:provider/provider.dart';
 
 class AddGroupDialog extends StatefulWidget {
   final Function(String) onAdd;
@@ -103,6 +106,7 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final _questionField = TextEditingController();
   final _answerField = TextEditingController();
+  bool isError = false;
 
   @override
   void dispose() {
@@ -113,6 +117,9 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final flashcards =
+        Provider.of<DatabaseModel>(context, listen: true).flashcards.toSet();
+
     return Dialog(
       child: Padding(
         padding: const EdgeInsets.all(15.0),
@@ -121,7 +128,7 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
+            children: [
               const Text("Add flashcard"),
               const SizedBox(height: 15),
               Form(
@@ -139,6 +146,13 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
                           }
                           return null;
                         },
+                        onChanged: (_) {
+                          if (isError) {
+                            setState(() {
+                              isError = false;
+                            });
+                          }
+                        },
                       ),
                       TextFormField(
                         controller: _answerField,
@@ -149,7 +163,15 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
                           if (value == null || value.isEmpty) {
                             return "Please enter some answer";
                           }
+
                           return null;
+                        },
+                        onChanged: (_) {
+                          if (isError) {
+                            setState(() {
+                              isError = false;
+                            });
+                          }
                         },
                       ),
                       FormBuilderImagePicker(
@@ -179,13 +201,37 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
                   ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
-                          widget.onAdd(_questionField.text, _answerField.text);
-                          Navigator.pop(context);
+                          final validationItem = Flashcard(
+                              question: _questionField.text,
+                              answer: _answerField.text);
+
+                          if (flashcards.contains(validationItem)) {
+                            setState(() {
+                              isError = true;
+                            });
+                          } else {
+                            widget.onAdd(
+                                _questionField.text, _answerField.text);
+                            Navigator.pop(context);
+                          }
                         }
                       },
                       child: const Text("Add"))
                 ],
-              )
+              ),
+              Visibility(
+                  visible: isError,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 8.0, horizontal: 35.0),
+                    child: Text(
+                      "There is already Flashcard with the same question and answer.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.error),
+                    ),
+                  ))
             ],
           ),
         ),

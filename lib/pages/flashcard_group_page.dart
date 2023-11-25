@@ -1,17 +1,17 @@
-import 'dart:convert';
-import 'dart:ui';
-
+import 'package:flashcards/model/db.dart';
 import 'package:flashcards/pages/exam_page.dart';
 import 'package:flashcards/widgets/add_dialog.dart';
 import 'package:flashcards/flashcards/flashcard.dart';
 import 'package:flashcards/pages/presentation_page.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/widgets/default_body.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 
-enum MenuItem { reorder, deleteGroup }
+enum MenuItem {
+  //  reorder,
+  deleteGroup
+}
 
 class FlashcardGroupPage extends StatefulWidget {
   final String groupName;
@@ -29,38 +29,26 @@ class FlashcardGroupPage extends StatefulWidget {
 }
 
 class _FlashcardGroupPageState extends State<FlashcardGroupPage> {
-  final _prefData = SharedPreferences.getInstance();
-  late Future<List<Flashcard>> _flashcardGroup;
-  bool _reorderList = false;
+  bool _isLoading = true;
+  set loading(bool value) {
+    setState(() {
+      _isLoading = value;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    _flashcardGroup = _prefData
-        .then((value) => _getFlashcardGroupItems(value, widget.groupName));
-  }
-
-  List<Flashcard> _getFlashcardGroupItems(
-      SharedPreferences pref, String groupName) {
-    final flashcardsJson = pref.getString(groupName);
-
-    if (flashcardsJson == null) return [];
-
-    final flashcards = (jsonDecode(flashcardsJson) as List)
-        .map(((e) => Flashcard(
-            question: e["question"], answer: e["answer"], image: e["image"])))
-        .toList();
-
-    return flashcards;
+    _fetchFlashcards();
   }
 
   void _onMenuSelected(MenuItem option, BuildContext context) {
     switch (option) {
-      case MenuItem.reorder:
-        setState(() {
-          _reorderList = !_reorderList;
-        });
-        break;
+      // case MenuItem.reorder:
+      //   setState(() {
+      //     _reorderList = !_reorderList;
+      //   });
+      //   break;
       case MenuItem.deleteGroup:
         widget.onDelete();
         break;
@@ -69,50 +57,45 @@ class _FlashcardGroupPageState extends State<FlashcardGroupPage> {
     }
   }
 
-  Future<void> _updateJson(List<Flashcard> flashcardGroup) async {
-    final prefs = await _prefData;
-    final String json =
-        jsonEncode(flashcardGroup.map((e) => e.toJson()).toList());
-    await prefs.setString(widget.groupName, json);
+  Future<void> _fetchFlashcards() async {
+    loading = true;
+    await Provider.of<DatabaseModel>(listen: false, context)
+        .getFlashcards(widget.groupName);
+    loading = false;
   }
 
-  Future<void> addToGroup(String question, String answer) async {
-    final flashcardGroup = await _flashcardGroup;
-
-    setState(() {
-      flashcardGroup.add(Flashcard(question: question, answer: answer));
-    });
-
-    await _updateJson(flashcardGroup);
+  Future<void> _addToGroup(String question, String answer) async {
+    loading = true;
+    await Provider.of<DatabaseModel>(listen: false, context).addFlashcard(
+        widget.groupName, Flashcard(question: question, answer: answer));
+    loading = false;
   }
 
   Future<void> _removeFromGroup(int index) async {
-    final flashcardGroup = await _flashcardGroup;
-
-    setState(() {
-      flashcardGroup.removeAt(index);
-    });
-
-    await _updateJson(flashcardGroup);
+    loading = true;
+    await Provider.of<DatabaseModel>(context, listen: false)
+        .removeFlashcard(widget.groupName, index);
+    loading = false;
   }
 
-  void _endReoreder() {
-    setState(() {
-      _reorderList = false;
-    });
+  Future<void> _updateFlashcard(int index) async {
+    loading = true;
+    Provider.of<DatabaseModel>(context, listen: false)
+        .updateFlashcard(widget.groupName, index);
+    loading = false;
   }
 
   void _showAddDialog(BuildContext context) {
-    _endReoreder();
+    // _endReoreder();
     showDialog<String>(
         context: context,
         builder: (BuildContext context) =>
-            AddFlashcardDialog(onAdd: addToGroup));
+            AddFlashcardDialog(onAdd: _addToGroup));
   }
 
   void _showPresentationPage(
       BuildContext context, List<Flashcard> flashcardGroup) {
-    _endReoreder();
+    // _endReoreder();
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -121,7 +104,7 @@ class _FlashcardGroupPageState extends State<FlashcardGroupPage> {
   }
 
   void _showExamPage(BuildContext context, List<Flashcard> flashcardGroup) {
-    _endReoreder();
+    // _endReoreder();
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -129,141 +112,135 @@ class _FlashcardGroupPageState extends State<FlashcardGroupPage> {
     );
   }
 
-  void _onReorder(int oldIndex, int newIndex) async {
-    final flashcardGroup = await _flashcardGroup;
+  // void _endReoreder() {
+  //   setState(() {
+  //     _reorderList = false;
+  //   });
+  // }
 
-    setState(() {
-      if (oldIndex < newIndex) {
-        newIndex -= 1;
-      }
-      final item = flashcardGroup.removeAt(oldIndex);
-      flashcardGroup.insert(newIndex, item);
-    });
-
-    await _updateJson(flashcardGroup);
-  }
-
-  ReorderableListView _reorderableListView(List<Flashcard> flashcardGroup) {
-    final List<ReorderableFlashcardItem> listItems = [
-      for (int i = 0; i < flashcardGroup.length; i += 1)
-        ReorderableFlashcardItem(
-          key: UniqueKey(),
-          index: i,
-          flashcard: flashcardGroup[i],
-        )
-    ];
-
-    Widget proxyDecorator(
-        Widget child, int index, Animation<double> animation) {
-      return AnimatedBuilder(
-        animation: animation,
-        builder: (BuildContext context, Widget? child) {
-          final double animValue = Curves.easeInOut.transform(animation.value);
-          final double elevation = lerpDouble(1, 6, animValue)!;
-          final double scale = lerpDouble(1, 1.02, animValue)!;
-          return Transform.scale(
-              scale: scale,
-              // Create a Card based on the color and the content of the dragged one
-              // and set its elevation to the animated value.
-              child: ReorderableFlashcardItem(
-                key: UniqueKey(),
-                index: listItems[index].index,
-                flashcard: listItems[index].flashcard,
-                elevation: elevation,
-              ));
-        },
-        child: child,
-      );
-    }
-
-    return ReorderableListView(
-      onReorder: _onReorder,
-      proxyDecorator: proxyDecorator,
-      padding: const EdgeInsets.symmetric(horizontal: 15.0),
-      physics: const BouncingScrollPhysics(),
-      children: listItems,
-    );
-  }
+  // void _onReorder(int oldIndex, int newIndex) async {
+  //   final flashcardGroup = await _flashcardGroup;
+  //   setState(() {
+  //     if (oldIndex < newIndex) {
+  //       newIndex -= 1;
+  //     }
+  //     final item = flashcardGroup.removeAt(oldIndex);
+  //     flashcardGroup.insert(newIndex, item);
+  //   });
+  //   await _updateJson(flashcardGroup);
+  // }
+  // ReorderableListView _reorderableListView(List<Flashcard> flashcardGroup) {
+  //   final List<ReorderableFlashcardItem> listItems = [
+  //     for (int i = 0; i < flashcardGroup.length; i += 1)
+  //       ReorderableFlashcardItem(
+  //         key: UniqueKey(),
+  //         index: i,
+  //         flashcard: flashcardGroup[i],
+  //       )
+  //   ];
+  //   Widget proxyDecorator(
+  //       Widget child, int index, Animation<double> animation) {
+  //     return AnimatedBuilder(
+  //       animation: animation,
+  //       builder: (BuildContext context, Widget? child) {
+  //         final double animValue = Curves.easeInOut.transform(animation.value);
+  //         final double elevation = lerpDouble(1, 6, animValue)!;
+  //         final double scale = lerpDouble(1, 1.02, animValue)!;
+  //         return Transform.scale(
+  //             scale: scale,
+  //             // Create a Card based on the color and the content of the dragged one
+  //             // and set its elevation to the animated value.
+  //             child: ReorderableFlashcardItem(
+  //               key: UniqueKey(),
+  //               index: listItems[index].index,
+  //               flashcard: listItems[index].flashcard,
+  //               elevation: elevation,
+  //             ));
+  //       },
+  //       child: child,
+  //     );
+  //   }
+  //   return ReorderableListView(
+  //     onReorder: _onReorder,
+  //     proxyDecorator: proxyDecorator,
+  //     padding: const EdgeInsets.symmetric(horizontal: 15.0),
+  //     physics: const BouncingScrollPhysics(),
+  //     children: listItems,
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
+    // if (!context.mounted) return const Scaffold();
+
     return Scaffold(
       appBar: AppBar(
-        // iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onPrimary),
-        // backgroundColor: Theme.of(context).colorScheme.primary,
         title: Text(
           widget.groupName,
-          // style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Provider.of<DatabaseModel>(context, listen: false)
+                .clearFlashcards();
+            Navigator.maybePop(context);
+          },
         ),
         actions: [
-          FutureBuilder(
-            future: _flashcardGroup,
-            builder: (context, snapshot) {
-              final isFlashcardsEmpty =
-                  (snapshot.hasData) ? snapshot.data!.isEmpty : true;
-
-              return PopupMenuButton<MenuItem>(
-                onSelected: (MenuItem option) {
-                  _onMenuSelected(option, context);
-                },
-                itemBuilder: (context) => <PopupMenuEntry<MenuItem>>[
-                  PopupMenuItem<MenuItem>(
-                    value: MenuItem.reorder,
-                    enabled: !isFlashcardsEmpty,
-                    child: (!_reorderList)
-                        ? const Text("Reorder elements")
-                        : const Text("End reordering"),
-                  ),
-                  const PopupMenuItem<MenuItem>(
-                    value: MenuItem.deleteGroup,
-                    child: Text("Delete whole group"),
-                  ),
-                ],
-              );
+          PopupMenuButton<MenuItem>(
+            onSelected: (MenuItem option) {
+              _onMenuSelected(option, context);
             },
+            itemBuilder: (context) => <PopupMenuEntry<MenuItem>>[
+              // PopupMenuItem<MenuItem>(
+              //   value: MenuItem.reorder,
+              //   enabled: !isFlashcardsEmpty,
+              //   child: (!_reorderList)
+              //       ? const Text("Reorder elements")
+              //       : const Text("End reordering"),
+              // ),
+              const PopupMenuItem<MenuItem>(
+                value: MenuItem.deleteGroup,
+                child: Text("Delete whole group"),
+              ),
+            ],
           )
         ],
       ),
       body: DefaultBody(
-        child: FutureBuilder(
-          future: _flashcardGroup,
-          builder: (context, snapshot) {
-            switch (snapshot.connectionState) {
-              case ConnectionState.active:
-              case ConnectionState.done:
-                final flashcardGroup = snapshot.data;
-                if (flashcardGroup == null) return ListView();
-
-                if (_reorderList) {
-                  return _reorderableListView(flashcardGroup);
-                }
-
-                return SafeArea(
-                  child: ListView.builder(
-                      itemCount: flashcardGroup.length,
-                      physics: const BouncingScrollPhysics(),
-                      padding: EdgeInsets.symmetric(
-                          horizontal: MediaQuery.of(context).size.width *
-                              MediaQuery.of(context).size.width /
-                              10000),
-                      itemBuilder: (context, index) {
-                        final item = flashcardGroup[index];
-
-                        return FlashcardListItem(
-                          key: UniqueKey(),
-                          index: index,
-                          flashcard: item,
-                          flashcardKey: widget.groupName,
-                          onDelete: () => _removeFromGroup(index),
-                          onUpdate: () async =>
-                              await _updateJson(flashcardGroup),
-                        );
-                      }),
-                );
-              case ConnectionState.waiting:
-              case ConnectionState.none:
-                return const CircularProgressIndicator();
+        child: Consumer<DatabaseModel>(
+          builder: (context, db, _) {
+            if (_isLoading) {
+              return const Center(child: CircularProgressIndicator());
             }
+
+            final flashcards = db.flashcards;
+
+            // if (_reorderList) {
+            //   return _reorderableListView(flashcardGroup);
+            // }
+
+            return SafeArea(
+              child: ListView.builder(
+                  itemCount: flashcards.length,
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: MediaQuery.of(context).size.width *
+                          MediaQuery.of(context).size.width /
+                          10000),
+                  itemBuilder: (context, index) {
+                    final item = flashcards[index];
+
+                    return FlashcardListItem(
+                      key: UniqueKey(),
+                      index: index,
+                      flashcard: item,
+                      flashcardKey: widget.groupName,
+                      onDelete: () => _removeFromGroup(index),
+                      onUpdate: () => _updateFlashcard(index),
+                    );
+                  }),
+            );
           },
         ),
       ),
@@ -279,49 +256,46 @@ class _FlashcardGroupPageState extends State<FlashcardGroupPage> {
         // color: Theme.of(context).colorScheme.primary,
         shape: const CircularNotchedRectangle(),
         notchMargin: 10,
-        child: FutureBuilder(
-            future: _flashcardGroup,
-            builder: (context, snapshot) {
-              switch (snapshot.connectionState) {
-                case ConnectionState.active:
-                case ConnectionState.done:
-                  final flashcardGroup = snapshot.data;
-                  if (flashcardGroup == null) return const Row();
+        child: Consumer<DatabaseModel>(builder: (context, db, _) {
+          if (_isLoading) {
+            return const Padding(
+              padding:
+                  EdgeInsets.only(bottom: 10, top: 40, left: 100, right: 100),
+              child: LinearProgressIndicator(),
+            );
+          }
 
-                  return Row(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        tooltip: "Learn",
-                        onPressed: (flashcardGroup.isNotEmpty)
-                            ? () =>
-                                _showPresentationPage(context, flashcardGroup)
-                            : null,
-                        icon: const Icon(
-                          Icons.present_to_all,
-                          // color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                      ),
-                      addSpacing(width: 30),
-                      IconButton(
-                        tooltip: "Exam",
-                        onPressed: (flashcardGroup.isNotEmpty)
-                            ? () => _showExamPage(context, flashcardGroup)
-                            : null,
-                        icon: const Icon(
-                          Icons.play_arrow_rounded,
-                          // color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                      )
-                    ],
-                  );
-                case ConnectionState.waiting:
-                case ConnectionState.none:
-                  return const LinearProgressIndicator();
-              }
-            }),
+          final flashcards = db.flashcards;
+
+          return Row(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              IconButton(
+                tooltip: "Learn",
+                onPressed: (flashcards.isNotEmpty)
+                    ? () => _showPresentationPage(context, flashcards)
+                    : null,
+                icon: const Icon(
+                  Icons.present_to_all,
+                  // color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              ),
+              addSpacing(width: 30),
+              IconButton(
+                tooltip: "Exam",
+                onPressed: (flashcards.isNotEmpty)
+                    ? () => _showExamPage(context, flashcards)
+                    : null,
+                icon: const Icon(
+                  Icons.play_arrow_rounded,
+                  // color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              )
+            ],
+          );
+        }),
       ),
     );
   }
@@ -455,9 +429,6 @@ class _FlashcardListItemState extends State<FlashcardListItem> {
                   IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: () {
-                      if (kDebugMode) {
-                        print(widget.index);
-                      }
                       widget.onDelete();
                     },
                   ),
