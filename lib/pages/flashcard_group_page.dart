@@ -4,7 +4,6 @@ import 'package:flashcards/widgets/add_dialog.dart';
 import 'package:flashcards/flashcards/flashcard.dart';
 import 'package:flashcards/pages/presentation_page.dart';
 import 'package:flashcards/utils.dart';
-import 'package:flashcards/widgets/default_body.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -29,17 +28,12 @@ class FlashcardGroupPage extends StatefulWidget {
 }
 
 class _FlashcardGroupPageState extends State<FlashcardGroupPage> {
-  bool _isLoading = true;
-  set loading(bool value) {
-    setState(() {
-      _isLoading = value;
-    });
-  }
+  Future<void>? _fetchFuture;
 
   @override
   void initState() {
     super.initState();
-    _fetchFlashcards();
+    _fetchFuture = _fetchFlashcards();
   }
 
   void _onMenuSelected(MenuItem option, BuildContext context) {
@@ -58,31 +52,23 @@ class _FlashcardGroupPageState extends State<FlashcardGroupPage> {
   }
 
   Future<void> _fetchFlashcards() async {
-    loading = true;
     await Provider.of<DatabaseModel>(listen: false, context)
         .getFlashcards(widget.groupName);
-    loading = false;
   }
 
   Future<void> _addToGroup(String question, String answer) async {
-    loading = true;
     await Provider.of<DatabaseModel>(listen: false, context).addFlashcard(
         widget.groupName, Flashcard(question: question, answer: answer));
-    loading = false;
   }
 
   Future<void> _removeFromGroup(int index) async {
-    loading = true;
     await Provider.of<DatabaseModel>(context, listen: false)
         .removeFlashcard(widget.groupName, index);
-    loading = false;
   }
 
   Future<void> _updateFlashcard(int index) async {
-    loading = true;
-    Provider.of<DatabaseModel>(context, listen: false)
+    await Provider.of<DatabaseModel>(context, listen: false)
         .updateFlashcard(widget.groupName, index);
-    loading = false;
   }
 
   void _showAddDialog(BuildContext context) {
@@ -207,47 +193,50 @@ class _FlashcardGroupPageState extends State<FlashcardGroupPage> {
           )
         ],
       ),
-      body: DefaultBody(
-        child: Consumer<DatabaseModel>(
-          builder: (context, db, _) {
-            if (_isLoading) {
+      body: FutureBuilder(
+          future: _fetchFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
+            } else {
+              return Consumer<DatabaseModel>(
+                builder: (context, db, _) {
+                  final flashcards = db.flashcards;
+
+                  // if (_reorderList) {
+                  //   return _reorderableListView(flashcardGroup);
+                  // }
+
+                  return SafeArea(
+                    child: ListView.builder(
+                        itemCount: flashcards.length,
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: MediaQuery.of(context).size.width *
+                                MediaQuery.of(context).size.width /
+                                10000),
+                        itemBuilder: (context, index) {
+                          final item = flashcards[index];
+
+                          return FlashcardListItem(
+                            key: UniqueKey(),
+                            index: index,
+                            flashcard: item,
+                            flashcardKey: widget.groupName,
+                            onDelete: () => _removeFromGroup(index),
+                            onUpdate: () => _updateFlashcard(index),
+                          );
+                        }),
+                  );
+                },
+              );
             }
-
-            final flashcards = db.flashcards;
-
-            // if (_reorderList) {
-            //   return _reorderableListView(flashcardGroup);
-            // }
-
-            return SafeArea(
-              child: ListView.builder(
-                  itemCount: flashcards.length,
-                  physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.symmetric(
-                      horizontal: MediaQuery.of(context).size.width *
-                          MediaQuery.of(context).size.width /
-                          10000),
-                  itemBuilder: (context, index) {
-                    final item = flashcards[index];
-
-                    return FlashcardListItem(
-                      key: UniqueKey(),
-                      index: index,
-                      flashcard: item,
-                      flashcardKey: widget.groupName,
-                      onDelete: () => _removeFromGroup(index),
-                      onUpdate: () => _updateFlashcard(index),
-                    );
-                  }),
-            );
-          },
-        ),
-      ),
+          }),
       extendBody: true,
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddDialog(context),
         tooltip: 'Add',
+        heroTag: '_FlashcardGroupPageState',
         shape: const CircleBorder(),
         child: const Icon(Icons.add),
       ),
@@ -256,46 +245,46 @@ class _FlashcardGroupPageState extends State<FlashcardGroupPage> {
         // color: Theme.of(context).colorScheme.primary,
         shape: const CircularNotchedRectangle(),
         notchMargin: 10,
-        child: Consumer<DatabaseModel>(builder: (context, db, _) {
-          if (_isLoading) {
-            return const Padding(
-              padding:
-                  EdgeInsets.only(bottom: 10, top: 40, left: 100, right: 100),
-              child: LinearProgressIndicator(),
-            );
-          }
+        child: FutureBuilder(
+            future: _fetchFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else {
+                return Consumer<DatabaseModel>(builder: (context, db, _) {
+                  final flashcards = db.flashcards;
 
-          final flashcards = db.flashcards;
-
-          return Row(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              IconButton(
-                tooltip: "Learn",
-                onPressed: (flashcards.isNotEmpty)
-                    ? () => _showPresentationPage(context, flashcards)
-                    : null,
-                icon: const Icon(
-                  Icons.present_to_all,
-                  // color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              ),
-              addSpacing(width: 30),
-              IconButton(
-                tooltip: "Exam",
-                onPressed: (flashcards.isNotEmpty)
-                    ? () => _showExamPage(context, flashcards)
-                    : null,
-                icon: const Icon(
-                  Icons.play_arrow_rounded,
-                  // color: Theme.of(context).colorScheme.onPrimary,
-                ),
-              )
-            ],
-          );
-        }),
+                  return Row(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        tooltip: "Learn",
+                        onPressed: (flashcards.isNotEmpty)
+                            ? () => _showPresentationPage(context, flashcards)
+                            : null,
+                        icon: const Icon(
+                          Icons.present_to_all,
+                          // color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
+                      addSpacing(width: 30),
+                      IconButton(
+                        tooltip: "Exam",
+                        onPressed: (flashcards.isNotEmpty)
+                            ? () => _showExamPage(context, flashcards)
+                            : null,
+                        icon: const Icon(
+                          Icons.play_arrow_rounded,
+                          // color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      )
+                    ],
+                  );
+                });
+              }
+            }),
       ),
     );
   }

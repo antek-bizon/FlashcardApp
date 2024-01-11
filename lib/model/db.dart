@@ -68,7 +68,7 @@ class DatabaseModel extends ChangeNotifier {
     final results = await Future.wait([storageFuture, dbFuture]);
 
     _flashcardGroups = {...results[0], ...results[1]};
-    notifyListeners();
+    // notifyListeners();
   }
 
   Future<Map<String, FlashcardGroupOptions>> _getFlashcardGroupsServer() async {
@@ -248,7 +248,7 @@ class DatabaseModel extends ChangeNotifier {
     }
 
     try {
-      _pb.collection("flashcards").delete(id);
+      await _pb.collection("flashcards").delete(id);
       return true;
     } on ClientException {
       return false;
