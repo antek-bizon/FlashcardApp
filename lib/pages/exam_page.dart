@@ -82,6 +82,40 @@ class _ExamPageState extends State<ExamPage> {
     }
   }
 
+  Widget _wrongAnswersList() {
+    return Column(children: [
+      const Padding(
+        padding: EdgeInsets.all(8.0),
+        child: SizedBox(
+          width: 300,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Text("Correct answer"),
+              Text("Your answer"),
+            ],
+          ),
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: SizedBox(
+          width: 300,
+          height: min(_wrongAnswers.length * 30, 150),
+          child: ListView.builder(
+            itemCount: _wrongAnswers.length,
+            itemBuilder: (context, index) {
+              final data = _wrongAnswers[index];
+              return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [Text(data.answer), Text(data.userAnswer)]);
+            },
+          ),
+        ),
+      ),
+    ]);
+  }
+
   void _tryNextPage() {
     if (_controller.page!.toInt() < widget.examItems.length - 1) {
       setState(() {
@@ -99,51 +133,30 @@ class _ExamPageState extends State<ExamPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        "Test finished",
-                        style: Theme.of(context).textTheme.headlineLarge,
-                      ),
-                      addSpacing(height: 15),
-                      Text(
-                        "Your score: $score",
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                      addSpacing(height: 15),
-                      const SizedBox(
-                        width: 300,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Text("Correct answer"),
-                            Text("Your answer"),
-                          ],
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          "Test finished",
+                          style: Theme.of(context).textTheme.headlineLarge,
                         ),
                       ),
-                      addSpacing(height: 15),
-                      SizedBox(
-                        width: 300,
-                        height: min(_wrongAnswers.length * 30, 150),
-                        child: ListView.builder(
-                          itemCount: _wrongAnswers.length,
-                          itemBuilder: (context, index) {
-                            final data = _wrongAnswers[index];
-                            return Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  Text(data.answer),
-                                  Text(data.userAnswer)
-                                ]);
-                          },
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          "Your score: $score",
+                          style: Theme.of(context).textTheme.bodyLarge,
                         ),
                       ),
-                      addSpacing(height: 15),
-                      ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            Navigator.pop(context);
-                          },
-                          child: const Text("Return"))
+                      if (_wrongAnswers.isNotEmpty) _wrongAnswersList(),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.pop(context);
+                            },
+                            child: const Text("Return")),
+                      )
                     ],
                   ),
                 ),

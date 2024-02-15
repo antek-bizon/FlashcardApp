@@ -4,6 +4,7 @@ import 'package:flashcards/widgets/add_dialog.dart';
 import 'package:flashcards/flashcards/flashcard.dart';
 import 'package:flashcards/pages/presentation_page.dart';
 import 'package:flashcards/utils.dart';
+import 'package:flashcards/widgets/default_body.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -157,8 +158,6 @@ class _FlashcardGroupPageState extends State<FlashcardGroupPage> {
 
   @override
   Widget build(BuildContext context) {
-    // if (!context.mounted) return const Scaffold();
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -193,45 +192,47 @@ class _FlashcardGroupPageState extends State<FlashcardGroupPage> {
           )
         ],
       ),
-      body: FutureBuilder(
-          future: _fetchFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else {
-              return Consumer<DatabaseModel>(
-                builder: (context, db, _) {
-                  final flashcards = db.flashcards;
+      body: DefaultBody(
+        child: FutureBuilder(
+            future: _fetchFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else {
+                return Consumer<DatabaseModel>(
+                  builder: (context, db, _) {
+                    final flashcards = db.flashcards;
 
-                  // if (_reorderList) {
-                  //   return _reorderableListView(flashcardGroup);
-                  // }
+                    // if (_reorderList) {
+                    //   return _reorderableListView(flashcardGroup);
+                    // }
 
-                  return SafeArea(
-                    child: ListView.builder(
-                        itemCount: flashcards.length,
-                        physics: const BouncingScrollPhysics(),
-                        padding: EdgeInsets.symmetric(
-                            horizontal: MediaQuery.of(context).size.width *
-                                MediaQuery.of(context).size.width /
-                                10000),
-                        itemBuilder: (context, index) {
-                          final item = flashcards[index];
+                    return SafeArea(
+                      child: ListView.builder(
+                          itemCount: flashcards.length,
+                          physics: const BouncingScrollPhysics(),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: MediaQuery.of(context).size.width *
+                                  MediaQuery.of(context).size.width /
+                                  10000),
+                          itemBuilder: (context, index) {
+                            final item = flashcards[index];
 
-                          return FlashcardListItem(
-                            key: UniqueKey(),
-                            index: index,
-                            flashcard: item,
-                            flashcardKey: widget.groupName,
-                            onDelete: () => _removeFromGroup(index),
-                            onUpdate: () => _updateFlashcard(index),
-                          );
-                        }),
-                  );
-                },
-              );
-            }
-          }),
+                            return FlashcardListItem(
+                              key: UniqueKey(),
+                              index: index,
+                              flashcard: item,
+                              flashcardKey: widget.groupName,
+                              onDelete: () => _removeFromGroup(index),
+                              onUpdate: () => _updateFlashcard(index),
+                            );
+                          }),
+                    );
+                  },
+                );
+              }
+            }),
+      ),
       extendBody: true,
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddDialog(context),
