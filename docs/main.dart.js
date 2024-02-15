@@ -47194,7 +47194,7 @@ A.au2.prototype={
 $1(a){return A.aP9()},
 $S:472}
 A.au3.prototype={
-$1(a){var s=t.N,r=new A.abN("http://129.151.205.194:8090",A.z(s,t.pH)),q=A.awq(t.YS)
+$1(a){var s=t.N,r=new A.abN("https://antek-bizon.xinit.se/pb/",A.z(s,t.pH)),q=A.awq(t.YS)
 r.c=new A.a08(q)
 r.Q=A.aT4()
 r.d=new A.x4(r)

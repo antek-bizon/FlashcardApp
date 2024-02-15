@@ -7,7 +7,7 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DatabaseModel extends ChangeNotifier {
-  final _pb = PocketBase("http://129.151.205.194:8090");
+  final _pb = PocketBase("https://antek-bizon.xinit.se/pb/");
   final _pref = SharedPreferences.getInstance();
   bool _healthy = true;
   bool _lastHealthy = true;
