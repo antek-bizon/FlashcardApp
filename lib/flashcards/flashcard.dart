@@ -29,4 +29,9 @@ class Flashcard {
 class FlashcardGroupOptions {
   final String? id;
   FlashcardGroupOptions({this.id});
+
+  @override
+  String toString() {
+    return "FlashcardGroupOptions: $id";
+  }
 }

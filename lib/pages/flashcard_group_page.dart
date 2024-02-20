@@ -1,10 +1,12 @@
 import 'package:flashcards/model/db.dart';
+import 'package:flashcards/model/exceptions.dart';
 import 'package:flashcards/pages/exam_page.dart';
 import 'package:flashcards/widgets/add_dialog.dart';
 import 'package:flashcards/flashcards/flashcard.dart';
 import 'package:flashcards/pages/presentation_page.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/widgets/default_body.dart';
+import 'package:flashcards/widgets/my_snack_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -53,23 +55,47 @@ class _FlashcardGroupPageState extends State<FlashcardGroupPage> {
   }
 
   Future<void> _fetchFlashcards() async {
-    await Provider.of<DatabaseModel>(listen: false, context)
-        .getFlashcards(widget.groupName);
+    try {
+      await Provider.of<DatabaseModel>(listen: false, context)
+          .getFlashcards(widget.groupName);
+    } on ExceptionMessage catch (ex) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(errorSnack(ex));
+      }
+    }
   }
 
   Future<void> _addToGroup(String question, String answer) async {
-    await Provider.of<DatabaseModel>(listen: false, context).addFlashcard(
-        widget.groupName, Flashcard(question: question, answer: answer));
+    try {
+      await Provider.of<DatabaseModel>(listen: false, context).addFlashcard(
+          widget.groupName, Flashcard(question: question, answer: answer));
+    } on ExceptionMessage catch (ex) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(errorSnack(ex));
+      }
+    }
   }
 
   Future<void> _removeFromGroup(int index) async {
-    await Provider.of<DatabaseModel>(context, listen: false)
-        .removeFlashcard(widget.groupName, index);
+    try {
+      await Provider.of<DatabaseModel>(context, listen: false)
+          .removeFlashcard(widget.groupName, index);
+    } on ExceptionMessage catch (ex) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(errorSnack(ex));
+      }
+    }
   }
 
   Future<void> _updateFlashcard(int index) async {
-    await Provider.of<DatabaseModel>(context, listen: false)
-        .updateFlashcard(widget.groupName, index);
+    try {
+      await Provider.of<DatabaseModel>(context, listen: false)
+          .updateFlashcard(widget.groupName, index);
+    } on ExceptionMessage catch (ex) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(errorSnack(ex));
+      }
+    }
   }
 
   void _showAddDialog(BuildContext context) {

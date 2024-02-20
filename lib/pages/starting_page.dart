@@ -1,25 +1,18 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:flashcards/model/db.dart';
+import 'package:flashcards/model/exceptions.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/widgets/default_body.dart';
+import 'package:flashcards/widgets/my_snack_bar.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:pocketbase/pocketbase.dart';
 import 'package:provider/provider.dart';
 
 class StartingPage extends StatelessWidget {
   const StartingPage({
     super.key,
   });
-
-  SnackBar _snackBar(String msg) {
-    return SnackBar(
-        content: Text(
-      msg,
-      textAlign: TextAlign.center,
-    ));
-  }
 
   Future<bool> tryLogin(BuildContext context, String email, String password,
       bool autoLogin) async {
@@ -30,13 +23,16 @@ class StartingPage extends StatelessWidget {
       // openApp(context);
       // }
       return true;
-    } on ClientException catch (err) {
+    } on ExceptionMessage catch (ex) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(_snackBar(err.response["message"].toString()));
+        ScaffoldMessenger.of(context).showSnackBar(errorSnack(ex));
       }
       return false;
     }
+  }
+
+  void openInOfflineMode(BuildContext context) {
+    Provider.of<DatabaseModel>(context, listen: false).openInOfflineMode();
   }
 
   @override
@@ -45,7 +41,7 @@ class StartingPage extends StatelessWidget {
       body: DefaultBody(
         child: Consumer<DatabaseModel>(
           builder: (context, value, child) => FutureBuilder(
-              future: value.autoLogin(),
+              future: value.tryAutoLogin(),
               builder: (context, snapshot) {
                 switch (snapshot.connectionState) {
                   case ConnectionState.waiting:
@@ -63,7 +59,9 @@ class StartingPage extends StatelessWidget {
                                 .secondaryContainer
                                 .withAlpha(100),
                             padding: const EdgeInsets.all(25),
-                            child: LoginWidget(onLogin: tryLogin),
+                            child: LoginWidget(
+                                onLogin: tryLogin,
+                                onOfflineMode: openInOfflineMode),
                           ),
                         ),
                       ),
@@ -77,8 +75,10 @@ class StartingPage extends StatelessWidget {
 }
 
 class LoginWidget extends StatefulWidget {
-  const LoginWidget({super.key, required this.onLogin});
+  const LoginWidget(
+      {super.key, required this.onLogin, required this.onOfflineMode});
   final Future<bool> Function(BuildContext, String, String, bool) onLogin;
+  final void Function(BuildContext) onOfflineMode;
 
   @override
   State<LoginWidget> createState() => _LoginWidgetState();
@@ -175,6 +175,12 @@ class _LoginWidgetState extends State<LoginWidget> {
                 child: _loading
                     ? const LinearProgressIndicator()
                     : const Text('Login'),
+              ),
+              addSpacing(height: 16.0),
+              ElevatedButton(
+                onPressed:
+                    _loading ? null : () => widget.onOfflineMode(context),
+                child: const Text('Offline mode'),
               ),
             ],
           ),

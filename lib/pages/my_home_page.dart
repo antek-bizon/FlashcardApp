@@ -236,11 +236,13 @@
 // }
 
 import 'package:flashcards/model/db.dart';
+import 'package:flashcards/model/exceptions.dart';
 import 'package:flashcards/model/theme.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/widgets/add_dialog.dart';
 import 'package:flashcards/pages/flashcard_group_page.dart';
 import 'package:flashcards/widgets/default_body.dart';
+import 'package:flashcards/widgets/my_snack_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -374,17 +376,9 @@ class _MyHomePageState extends State<MyHomePage> {
                           );
                         },
                         title: Text(item.key),
-                        trailing: (item.value.id != null)
-                            ? const IconButton(
-                                onPressed: null,
-                                icon: Icon(Icons.cloud_done_outlined),
-                              )
-                            : IconButton(
-                                onPressed: () {
-                                  setFuture = _uploadToServer(item.key);
-                                },
-                                icon: const Icon(Icons.cloud_off_outlined),
-                              ),
+                        trailing: (!db.isOfflineMode)
+                            ? _cloudIcon(item.key, item.value.id)
+                            : null,
                       ),
                     );
                   },
@@ -435,15 +429,41 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  IconButton _cloudIcon(String key, String? id) {
+    return (id != null)
+        ? const IconButton(
+            onPressed: null,
+            icon: Icon(Icons.cloud_done_outlined),
+          )
+        : IconButton(
+            onPressed: () {
+              setFuture = _uploadToServer(key);
+            },
+            icon: const Icon(Icons.cloud_off_outlined),
+          );
+  }
+
   Future<void> _fetchAllGroups() async {
-    return Provider.of<DatabaseModel>(listen: false, context)
-        .getFlashcardGroups();
+    try {
+      return Provider.of<DatabaseModel>(listen: false, context)
+          .getFlashcardGroups();
+    } on ExceptionMessage catch (ex) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(errorSnack(ex));
+      }
+    }
   }
 
   Future<void> _addGroup(String name) async {
-    await Provider.of<DatabaseModel>(listen: false, context)
-        .addFlashcardGroup(name);
-    return _fetchAllGroups();
+    try {
+      await Provider.of<DatabaseModel>(listen: false, context)
+          .addFlashcardGroup(name);
+      return _fetchAllGroups();
+    } on ExceptionMessage catch (ex) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(errorSnack(ex));
+      }
+    }
   }
 
   void _showAddDialog(BuildContext context) {
@@ -461,18 +481,30 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _removeGroup(BuildContext context, String key) async {
-    await Provider.of<DatabaseModel>(listen: false, context)
-        .removeFlashcardGroup(key);
-    if (context.mounted) {
-      await Navigator.maybePop(context);
+    try {
+      await Provider.of<DatabaseModel>(listen: false, context)
+          .removeFlashcardGroup(key);
+      if (context.mounted) {
+        await Navigator.maybePop(context);
+      }
+      return _fetchAllGroups();
+    } on ExceptionMessage catch (ex) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(errorSnack(ex));
+      }
     }
-    return _fetchAllGroups();
   }
 
   Future<void> _uploadToServer(String name) async {
-    final db = Provider.of<DatabaseModel>(listen: false, context);
-    await db.addFlashcardGroup(name);
-    print(await db.uploadGroupItems(name));
+    try {
+      final db = Provider.of<DatabaseModel>(listen: false, context);
+      await db.addFlashcardGroup(name);
+      await db.uploadGroupItems(name);
+    } on ExceptionMessage catch (ex) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(errorSnack(ex));
+      }
+    }
   }
 
   List<DropdownMenuItem<ThemeMode>> _dropdownMenuItems() {

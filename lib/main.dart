@@ -40,8 +40,9 @@ class MyApp extends StatelessWidget {
                   titleMedium: TextStyle(color: Colors.white)))),
           themeMode: theme.mode,
           home: Consumer<DatabaseModel>(
-            builder: (context, db, child) =>
-                db.isAuth ? const MyHomePage() : const StartingPage(),
+            builder: (context, db, child) => (db.isAuth || db.isOfflineMode)
+                ? const MyHomePage()
+                : const StartingPage(),
           ));
     });
   }
