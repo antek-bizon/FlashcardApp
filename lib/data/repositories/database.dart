@@ -10,12 +10,16 @@ class DatabaseRepository {
 
   DatabaseRepository(String baseUrl) : _pb = PocketBase(baseUrl);
 
-  Future<void> login(String email, String password, bool save) async {
+  Future<void> login(String email, String password) async {
     try {
       await _pb.collection("users").authWithPassword(email, password);
     } on ClientException catch (err) {
       throw err.response["message"].toString();
     }
+  }
+
+  void logout() {
+    _pb.authStore.clear();
   }
 
   Future<Map<String, FlashcardGroup>> getFlashcardGroups() async {
@@ -120,6 +124,21 @@ class DatabaseRepository {
       }
 
       await _pb.collection("flashcards").delete(id);
+    } on ClientException catch (err) {
+      throw err.response["message"].toString();
+    }
+  }
+
+  Future<void> updateFlashcard(FlashcardModel item) async {
+    try {
+      final id = item.id;
+      if (id == null) {
+        throw "Cannot update flashcard. Id is null";
+      }
+
+      final body = {"question": item.question, "answer": item.answer};
+
+      await _pb.collection("flashcards").update(id, body: body);
     } on ClientException catch (err) {
       throw err.response["message"].toString();
     }

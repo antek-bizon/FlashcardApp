@@ -1,9 +1,8 @@
-import 'dart:math';
-
 import 'package:flashcards/cubits/auth.dart';
 import 'package:flashcards/data/models/flashcard.dart';
 import 'package:flashcards/data/repositories/database.dart';
 import 'package:flashcards/data/repositories/localstorage.dart';
+import 'package:flashcards/utils.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:form_builder_image_picker/form_builder_image_picker.dart';
 
@@ -23,15 +22,9 @@ class SuccessCardState extends CardState {
   SuccessCardState(this.flashcards);
 }
 
-class SuccessGroupState extends CardState {
-  final Map<String, FlashcardGroup> groups;
-  SuccessGroupState(this.groups);
-}
-
 class CardCubit extends Cubit<CardState> {
   final DatabaseRepository _dbr;
   final LocalStorageRepository _lsr;
-  Map<String, FlashcardGroup> _groups = {};
   final List<FlashcardModel> _cards = [];
 
   CardCubit(
@@ -41,44 +34,10 @@ class CardCubit extends Cubit<CardState> {
         _lsr = localStorageRepository,
         super(InitCardState());
 
-  void fetchGroups(final AuthState authState) {
+  void getFlashcards(AuthState authState, String groupName, String? groupId) {
     _try(() async {
       final futures = [
-        if (_isAuth(authState)) _dbr.getFlashcardGroups(),
-        _lsr.getFlashcardGroups()
-      ];
-      final results = await Future.wait(futures);
-      _groups = _removeGroupDuplicates(results);
-      emit(SuccessGroupState(_groups));
-    });
-  }
-
-  void addGroup(final AuthState authState, String name) {
-    _try(() async {
-      final id =
-          (_isAuth(authState)) ? await _dbr.addFlashcardGroup(name) : null;
-      await _lsr.addFlashcardGroup(name);
-      _groups.putIfAbsent(name, () => FlashcardGroup(id));
-      emit(SuccessGroupState(_groups));
-    });
-  }
-
-  void removeGroup(final AuthState authState, String name) {
-    _try(() async {
-      final futures = [
-        if (_isAuth(authState)) _dbr.removeFlashcardGroup(name),
-        _lsr.removeGroup(name)
-      ];
-      await Future.wait(futures);
-      _groups.remove(name);
-      emit(SuccessGroupState(_groups));
-    });
-  }
-
-  void getFlashcards(final AuthState authState, String groupName) {
-    _try(() async {
-      final futures = [
-        if (_isAuth(authState)) _dbr.getFlashcards(groupName),
+        if (isAuth(authState) && groupId != null) _dbr.getFlashcards(groupId),
         _lsr.getFlashcards(groupName)
       ];
       final results = await Future.wait(futures);
@@ -88,11 +47,17 @@ class CardCubit extends Cubit<CardState> {
     });
   }
 
-  void addFlashcard(final AuthState authState, String groupName,
-      FlashcardModel item, XFileImage? image) {
+  void addFlashcard(
+      {required AuthState authState,
+      required String groupName,
+      String? groupId,
+      required String question,
+      required String answer,
+      XFileImage? image}) {
     _try(() async {
-      final id = (_isAuth(authState))
-          ? await _dbr.addFlashcard(groupName, item, image)
+      final item = FlashcardModel(question: question, answer: answer);
+      final id = (isAuth(authState) && groupId != null)
+          ? await _dbr.addFlashcard(groupId, item, image)
           : null;
       item.id = id;
       item.image = image?.file.path;
@@ -102,11 +67,12 @@ class CardCubit extends Cubit<CardState> {
     });
   }
 
-  void removeFlashcard(final AuthState authState, String groupName, int index) {
+  void removeFlashcard(
+      AuthState authState, String groupName, int index, bool hasGroupId) {
     _try(() async {
       final item = _cards.removeAt(index);
       final futures = [
-        if (_isAuth(authState)) _dbr.removeFlashcard(item),
+        if (isAuth(authState) && hasGroupId) _dbr.removeFlashcard(item),
         _lsr.updateJson(groupName, _cards)
       ];
 
@@ -115,20 +81,17 @@ class CardCubit extends Cubit<CardState> {
     });
   }
 
-  void uploadGroupItems(final AuthState authState, String name) {
+  void updateFlashcard(
+      AuthState authState, String groupName, int index, bool hasGroupId) {
     _try(() async {
-      if (_isAuth(authState)) {
-        throw "Cannot upload group items without authorization";
-      }
+      final item = _cards.elementAt(index);
+      final futures = [
+        if (isAuth(authState) && hasGroupId) _dbr.updateFlashcard(item),
+        _lsr.updateJson(groupName, _cards)
+      ];
 
-      final flashcards = await _lsr.getFlashcards(name);
-      final requests = flashcards.map((e) => _dbr.addFlashcard(name, e, null));
-      final results = await Future.wait(requests);
-      for (int i = 0; i < results.length; i++) {
-        flashcards[i].id = results[i];
-      }
-      await _lsr.updateJson(name, flashcards);
-      emit(SuccessGroupState(_groups));
+      await Future.wait(futures);
+      emit(SuccessCardState(_cards));
     });
   }
 
@@ -139,23 +102,6 @@ class CardCubit extends Cubit<CardState> {
     } catch (e) {
       emit(ErrorCardState(e.toString()));
     }
-  }
-
-  bool _isAuth(final AuthState authState) {
-    return authState is SuccessAuthState;
-  }
-
-  Map<String, FlashcardGroup> _removeGroupDuplicates(
-      final List<Map<String, FlashcardGroup>> listWithDuplicates) {
-    final Map<String, FlashcardGroup> result = {};
-    for (final groupMap in listWithDuplicates) {
-      groupMap.forEach((key, value) {
-        if (!result.containsKey(key)) {
-          result.putIfAbsent(key, () => value);
-        }
-      });
-    }
-    return result;
   }
 
   List<FlashcardModel> _removeCardsDuplicates(

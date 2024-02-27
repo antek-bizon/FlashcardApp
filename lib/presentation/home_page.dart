@@ -1,5 +1,5 @@
 import 'package:flashcards/cubits/auth.dart';
-import 'package:flashcards/cubits/flashcards.dart';
+import 'package:flashcards/cubits/groups.dart';
 import 'package:flashcards/cubits/theme.dart';
 import 'package:flashcards/data/models/flashcard.dart';
 import 'package:flashcards/data/models/group_page_arguments.dart';
@@ -23,14 +23,11 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final _key = GlobalKey<ScaffoldState>();
 
-  AuthState authState(BuildContext context) =>
-      BlocProvider.of<AuthCubit>(context).state;
-
   @override
   void initState() {
     super.initState();
     context
-        .read<CardCubit>()
+        .read<GroupCubit>()
         .fetchGroups(BlocProvider.of<AuthCubit>(context).state);
   }
 
@@ -80,27 +77,31 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-        child: BlocConsumer<CardCubit, CardState>(
+        child: BlocConsumer<GroupCubit, GroupState>(
           builder: (context, state) {
             if (state is SuccessGroupState) {
               final groups = state.groups.entries.toList();
 
               return GroupList(
                 groups: groups,
-                onOpen: (groupName) {
+                onOpen: (groupName, groupId) {
                   Navigator.pushNamed(
                     context,
                     GroupPage.route,
-                    arguments: GroupPageArguments(groupName, () {
+                    arguments: GroupPageArguments(groupName, groupId, () {
                       context
-                          .read<CardCubit>()
-                          .removeGroup(authState(context), groupName);
+                          .read<GroupCubit>()
+                          .removeGroup(authState(context), groupName, groupId);
                     }),
                   );
                 },
                 onUpload: (groupName) => context
-                    .read<CardCubit>()
+                    .read<GroupCubit>()
                     .uploadGroupItems(authState(context), groupName),
+              );
+            } else if (state is ErrorGroupState) {
+              return const Center(
+                child: Text("Error has occured. Please try again."),
               );
             } else {
               return const Center(
@@ -109,7 +110,7 @@ class _HomePageState extends State<HomePage> {
             }
           },
           listener: (context, state) {
-            if (state is ErrorCardState) {
+            if (state is ErrorGroupState) {
               ScaffoldMessenger.of(context)
                   .showSnackBar(quickSnack(state.message));
             }
@@ -120,14 +121,14 @@ class _HomePageState extends State<HomePage> {
   void showAddDialog(BuildContext context) {
     showDialog<String>(
       context: context,
-      builder: (BuildContext context) => BlocBuilder(
+      builder: (BuildContext context) => BlocBuilder<GroupCubit, GroupState>(
         builder: (context, state) {
           if (state is SuccessGroupState) {
             final group = state.groups;
             return AddGroupDialog(
                 existingGroups: group.keys.toSet(),
                 onAdd: (String name) {
-                  context.read<CardCubit>().addGroup(authState(context), name);
+                  context.read<GroupCubit>().addGroup(authState(context), name);
                 });
           } else {
             return const Center(
@@ -188,6 +189,7 @@ class _HomePageBodyState extends State<HomePageBody> {
               _tooltip = null;
             });
             widget.onPop();
+            Navigator.pop(context);
           },
         ),
         title: const Text(HomePage.title),
@@ -238,7 +240,7 @@ class _HomePageBodyState extends State<HomePageBody> {
 
 class GroupList extends StatelessWidget {
   final List<MapEntry<String, FlashcardGroup>> groups;
-  final void Function(String) onOpen;
+  final void Function(String, String?) onOpen;
   final void Function(String) onUpload;
 
   const GroupList(
@@ -275,7 +277,7 @@ class GroupList extends StatelessWidget {
 
           return Card(
             child: ListTile(
-              onTap: () => onOpen(group.key),
+              onTap: () => onOpen(group.key, group.value.id),
               title: Text(group.key),
               trailing: (BlocProvider.of<AuthCubit>(context).state
                       is SuccessAuthState)

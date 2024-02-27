@@ -1,3 +1,5 @@
+import 'package:flashcards/cubits/flashcards.dart';
+import 'package:flashcards/cubits/groups.dart';
 import 'package:flashcards/presentation/exam_page.dart';
 import 'package:flashcards/presentation/widgets/add_dialog.dart';
 import 'package:flashcards/data/models/flashcard.dart';
@@ -5,7 +7,7 @@ import 'package:flashcards/presentation/presentation_page.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/presentation/widgets/default_body.dart';
 import 'package:flutter/material.dart';
-import 'package:form_builder_image_picker/form_builder_image_picker.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 enum MenuItem {
   //  reorder,
@@ -14,22 +16,23 @@ enum MenuItem {
 
 class GroupPage extends StatefulWidget {
   static const String route = "/groupPage";
+  final String groupName;
+  final String? groupId;
 
-  const GroupPage({
-    super.key,
-  });
+  const GroupPage({super.key, required this.groupName, this.groupId});
 
   @override
   State<GroupPage> createState() => _GroupPageState();
 }
 
 class _GroupPageState extends State<GroupPage> {
-  Future<void>? _fetchFuture;
-
   @override
   void initState() {
     super.initState();
-    _fetchFuture = _fetchFlashcards();
+
+    context
+        .read<CardCubit>()
+        .getFlashcards(authState(context), widget.groupName, widget.groupId);
   }
 
   void _onMenuSelected(MenuItem option, BuildContext context) {
@@ -40,67 +43,41 @@ class _GroupPageState extends State<GroupPage> {
       //   });
       //   break;
       case MenuItem.deleteGroup:
-        widget.onDelete();
+        context
+            .read<GroupCubit>()
+            .removeGroup(authState(context), widget.groupName, widget.groupId);
         break;
       default:
         break;
     }
   }
 
-  Future<void> _fetchFlashcards() async {
-    try {
-      await Provider.of<DatabaseModel>(listen: false, context)
-          .getFlashcards(widget.groupName);
-    } on ExceptionMessage catch (ex) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(errorSnack(ex));
-      }
-    }
-  }
-
-  Future<void> _addToGroup(
-      String question, String answer, XFileImage? image) async {
-    try {
-      await Provider.of<DatabaseModel>(listen: false, context).addFlashcard(
-          widget.groupName,
-          FlashcardModel(question: question, answer: answer),
-          image);
-      await _fetchFlashcards();
-    } on ExceptionMessage catch (ex) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(errorSnack(ex));
-      }
-    }
-  }
-
-  Future<void> _removeFromGroup(int index) async {
-    try {
-      await Provider.of<DatabaseModel>(context, listen: false)
-          .removeFlashcard(widget.groupName, index);
-    } on ExceptionMessage catch (ex) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(errorSnack(ex));
-      }
-    }
-  }
-
-  Future<void> _updateFlashcard(int index) async {
-    try {
-      await Provider.of<DatabaseModel>(context, listen: false)
-          .updateFlashcard(widget.groupName, index);
-    } on ExceptionMessage catch (ex) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(errorSnack(ex));
-      }
-    }
-  }
-
   void _showAddDialog(BuildContext context) {
     // _endReoreder();
     showDialog<String>(
-        context: context,
-        builder: (BuildContext context) =>
-            AddFlashcardDialog(onAdd: _addToGroup));
+      context: context,
+      builder: (BuildContext context) =>
+          BlocBuilder<CardCubit, CardState>(builder: (context, state) {
+        if (state is SuccessCardState) {
+          return AddFlashcardDialog(
+            onAdd: (question, answer, image) => context
+                .read<CardCubit>()
+                .addFlashcard(
+                    authState: authState(context),
+                    groupName: widget.groupName,
+                    groupId: widget.groupId,
+                    question: question,
+                    answer: answer,
+                    image: image),
+            existingFlashcards: state.flashcards,
+          );
+        } else {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+      }),
+    );
   }
 
   void _showPresentationPage(
@@ -184,17 +161,7 @@ class _GroupPageState extends State<GroupPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.groupName,
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Provider.of<DatabaseModel>(context, listen: false)
-                .clearFlashcards();
-            Navigator.maybePop(context);
-          },
-        ),
+        title: Text(widget.groupName),
         actions: [
           PopupMenuButton<MenuItem>(
             onSelected: (MenuItem option) {
@@ -217,46 +184,44 @@ class _GroupPageState extends State<GroupPage> {
         ],
       ),
       body: DefaultBody(
-        child: FutureBuilder(
-            future: _fetchFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              } else {
-                return Consumer<DatabaseModel>(
-                  builder: (context, db, _) {
-                    final flashcards = db.flashcards;
+          child: BlocConsumer<CardCubit, CardState>(
+        builder: (context, state) {
+          if (state is SuccessCardState) {
+            final flashcards = state.flashcards;
+            return SafeArea(
+              child: ListView.builder(
+                  itemCount: flashcards.length,
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: MediaQuery.of(context).size.width *
+                          MediaQuery.of(context).size.width /
+                          10000),
+                  itemBuilder: (context, index) {
+                    final item = flashcards[index];
+                    final cubit = context.read<CardCubit>();
 
-                    // if (_reorderList) {
-                    //   return _reorderableListView(flashcardGroup);
-                    // }
-
-                    return SafeArea(
-                      child: ListView.builder(
-                          itemCount: flashcards.length,
-                          physics: const BouncingScrollPhysics(),
-                          padding: EdgeInsets.symmetric(
-                              horizontal: MediaQuery.of(context).size.width *
-                                  MediaQuery.of(context).size.width /
-                                  10000),
-                          itemBuilder: (context, index) {
-                            final item = flashcards[index];
-
-                            return FlashcardListItem(
-                              key: UniqueKey(),
-                              index: index,
-                              flashcard: item,
-                              flashcardKey: widget.groupName,
-                              onDelete: () => _removeFromGroup(index),
-                              onUpdate: () => _updateFlashcard(index),
-                            );
-                          }),
+                    return FlashcardListItem(
+                      key: UniqueKey(),
+                      index: index,
+                      flashcard: item,
+                      flashcardKey: widget.groupName,
+                      onDelete: () => cubit.removeFlashcard(authState(context),
+                          widget.groupName, index, widget.groupId != null),
+                      onUpdate: () => cubit.updateFlashcard(authState(context),
+                          widget.groupName, index, widget.groupId != null),
                     );
-                  },
-                );
-              }
-            }),
-      ),
+                  }),
+            );
+          } else if (state is ErrorCardState) {
+            return const Center(
+              child: Text("Error has occured. Please try again."),
+            );
+          } else {
+            return const Center(child: CircularProgressIndicator());
+          }
+        },
+        listener: (context, state) {},
+      )),
       extendBody: true,
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddDialog(context),
@@ -270,46 +235,44 @@ class _GroupPageState extends State<GroupPage> {
         // color: Theme.of(context).colorScheme.primary,
         shape: const CircularNotchedRectangle(),
         notchMargin: 10,
-        child: FutureBuilder(
-            future: _fetchFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              } else {
-                return Consumer<DatabaseModel>(builder: (context, db, _) {
-                  final flashcards = db.flashcards;
+        child: BlocBuilder<CardCubit, CardState>(
+          builder: (context, state) {
+            if (state is SuccessCardState) {
+              final flashcards = state.flashcards;
 
-                  return Row(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        tooltip: "Learn",
-                        onPressed: (flashcards.isNotEmpty)
-                            ? () => _showPresentationPage(context, flashcards)
-                            : null,
-                        icon: const Icon(
-                          Icons.present_to_all,
-                          // color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                      ),
-                      addSpacing(width: 30),
-                      IconButton(
-                        tooltip: "Exam",
-                        onPressed: (flashcards.isNotEmpty)
-                            ? () => _showExamPage(context, flashcards)
-                            : null,
-                        icon: const Icon(
-                          Icons.play_arrow_rounded,
-                          // color: Theme.of(context).colorScheme.onPrimary,
-                        ),
-                      )
-                    ],
-                  );
-                });
-              }
-            }),
+              return Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  IconButton(
+                    tooltip: "Learn",
+                    onPressed: (flashcards.isNotEmpty)
+                        ? () => _showPresentationPage(context, flashcards)
+                        : null,
+                    icon: const Icon(
+                      Icons.present_to_all,
+                      // color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                  addSpacing(width: 30),
+                  IconButton(
+                    tooltip: "Exam",
+                    onPressed: (flashcards.isNotEmpty)
+                        ? () => _showExamPage(context, flashcards)
+                        : null,
+                    icon: const Icon(
+                      Icons.play_arrow_rounded,
+                      // color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  )
+                ],
+              );
+            } else {
+              return const Center(child: CircularProgressIndicator());
+            }
+          },
+        ),
       ),
     );
   }

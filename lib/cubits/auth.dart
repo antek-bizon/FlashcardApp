@@ -1,4 +1,5 @@
 import 'package:bloc/bloc.dart';
+import 'package:flashcards/data/repositories/database.dart';
 
 abstract class AuthState {}
 
@@ -17,10 +18,19 @@ class GuestAuthState extends AuthState {}
 
 // -------------- Cubit ---------------------
 class AuthCubit extends Cubit<AuthState> {
-  AuthCubit() : super(InitAuthState());
+  final DatabaseRepository _dbr;
+  AuthCubit(DatabaseRepository databaseRepository)
+      : _dbr = databaseRepository,
+        super(InitAuthState());
 
-  void login(String username, String password) {
-    emit(SuccessAuthState());
+  Future<void> login(String username, String password /*, bool save*/) async {
+    emit(LoadingAuthState());
+    try {
+      await _dbr.login(username, password);
+      emit(SuccessAuthState());
+    } catch (ex) {
+      emit(ErrorAuthState(ex.toString()));
+    }
   }
 
   void guestLogin() {
@@ -28,6 +38,8 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   void logout() {
+    emit(LoadingAuthState());
+    _dbr.logout();
     emit(InitAuthState());
   }
 }

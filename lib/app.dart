@@ -1,5 +1,10 @@
 import 'package:flashcards/cubits/auth.dart';
+import 'package:flashcards/cubits/flashcards.dart';
+import 'package:flashcards/cubits/groups.dart';
 import 'package:flashcards/cubits/theme.dart';
+import 'package:flashcards/data/models/group_page_arguments.dart';
+import 'package:flashcards/data/repositories/database.dart';
+import 'package:flashcards/data/repositories/localstorage.dart';
 import 'package:flashcards/presentation/group_page.dart';
 import 'package:flashcards/presentation/home_page.dart';
 import 'package:flashcards/presentation/login_page.dart';
@@ -11,23 +16,33 @@ import 'package:google_fonts/google_fonts.dart';
 
 class App extends StatelessWidget {
   final ThemeRepository themeRepository;
+  final DatabaseRepository databaseRepository;
+  final LocalStorageRepository localStorageRepository;
 
-  const App({super.key, required this.themeRepository});
+  const App(
+      {super.key,
+      required this.themeRepository,
+      required this.databaseRepository,
+      required this.localStorageRepository});
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider.value(
-      value: themeRepository,
-      child: MultiBlocProvider(
-        providers: [
-          BlocProvider(
-              create: (context) => ThemeCubit(context.read<ThemeRepository>())
-                ..getCurrentTheme())
-          // ChangeNotifierProvider<ThemeModel>(create: (_) => ThemeModel()),
-          // ChangeNotifierProvider<DatabaseModel>(create: (_) => DatabaseModel())
-        ],
-        child: const AppView(),
-      ),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+            create: (context) =>
+                ThemeCubit(themeRepository)..getCurrentTheme()),
+        BlocProvider(create: (context) => AuthCubit(databaseRepository)),
+        BlocProvider(
+            create: (context) => GroupCubit(
+                databaseRepository: databaseRepository,
+                localStorageRepository: localStorageRepository)),
+        BlocProvider(
+            create: (context) => CardCubit(
+                databaseRepository: databaseRepository,
+                localStorageRepository: localStorageRepository)),
+      ],
+      child: const AppView(),
     );
   }
 }
@@ -57,7 +72,18 @@ class AppView extends StatelessWidget {
           routes: {
             LoginPage.route: (_) => const LoginPage(),
             HomePage.route: (_) => const HomePage(),
-            // '/group': (_) => const GroupPage(),
+          },
+          onGenerateRoute: (settings) {
+            if (settings.name == GroupPage.route) {
+              final args = settings.arguments as GroupPageArguments;
+              return MaterialPageRoute(
+                  settings: RouteSettings(name: "/${args.groupName}"),
+                  builder: (context) => GroupPage(
+                        groupName: args.groupName,
+                        groupId: args.groupId,
+                      ));
+            }
+            return null;
           },
           home: BlocBuilder<AuthCubit, AuthState>(builder: (context, state) {
             return const LoginPage();

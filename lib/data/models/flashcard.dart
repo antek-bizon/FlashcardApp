@@ -32,7 +32,7 @@ class FlashcardModel {
 }
 
 class FlashcardGroup {
-  final String? id;
+  String? id;
   FlashcardGroup(this.id);
 
   @override

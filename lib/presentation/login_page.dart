@@ -130,7 +130,7 @@ class _LoginFormState extends State<LoginForm> {
                     });
                   },
                 ),
-              BlocBuilder(builder: (context, state) {
+              BlocBuilder<AuthCubit, AuthState>(builder: (context, state) {
                 final isLoading = state is LoadingAuthState;
                 return Column(
                   children: [
