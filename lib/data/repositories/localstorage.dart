@@ -66,7 +66,9 @@ class LocalStorageRepository {
 
     final flashcards = (jsonDecode(flashcardsJson) as List)
         .map(((e) => FlashcardModel(
-            question: e["question"], answer: e["answer"], image: e["image"])))
+            question: e["question"],
+            answer: e["answer"],
+            imageUri: e["image"])))
         .toList();
 
     return flashcards;

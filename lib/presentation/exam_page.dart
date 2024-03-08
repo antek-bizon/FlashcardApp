@@ -11,7 +11,10 @@ enum ExamItemState { none, correct, wrong }
 class ExamItem extends FlashcardModel {
   ExamItemState state = ExamItemState.none;
   ExamItem({required FlashcardModel flashcard})
-      : super(question: flashcard.question, answer: flashcard.answer);
+      : super(
+            question: flashcard.question,
+            answer: flashcard.answer,
+            imageUri: flashcard.imageUri);
 }
 
 class WrongAnswer extends FlashcardModel {
@@ -223,6 +226,7 @@ class _ExamPageState extends State<ExamPage> {
                     child: FlashcardDraft(
                       question: e.question,
                       answer: e.answer,
+                      imageUri: e.imageUri,
                       showFront: e.state == ExamItemState.none,
                       backColor: e.state == ExamItemState.wrong
                           ? const Color.fromARGB(255, 255, 4, 0)

@@ -60,7 +60,7 @@ class CardCubit extends Cubit<CardState> {
           ? await _dbr.addFlashcard(groupId, item, image)
           : null;
       item.id = id;
-      item.image = image?.file.path;
+      item.imageUri = image?.file.path;
       _cards.add(item);
       await _lsr.updateJson(groupName, _cards);
       emit(SuccessCardState(_cards));

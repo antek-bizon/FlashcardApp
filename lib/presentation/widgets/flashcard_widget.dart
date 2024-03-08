@@ -1,11 +1,13 @@
+import 'package:flashcards/utils.dart';
 import 'package:flutter/material.dart';
 
 class FlashcardWidget extends StatefulWidget {
   final String question;
   final String answer;
+  final String? imageUri;
 
   const FlashcardWidget(
-      {super.key, required this.question, required this.answer});
+      {super.key, required this.question, required this.answer, this.imageUri});
 
   @override
   State<FlashcardWidget> createState() => _FlashcardWidgetState();
@@ -28,6 +30,7 @@ class _FlashcardWidgetState extends State<FlashcardWidget> {
         question: widget.question,
         answer: widget.answer,
         showFront: _showFront,
+        imageUri: widget.imageUri,
       ),
     );
   }
@@ -38,10 +41,12 @@ class FlashcardDraft extends StatelessWidget {
       {super.key,
       required this.question,
       required this.answer,
+      this.imageUri,
       required this.showFront,
       this.backColor = Colors.lightGreen});
   final String question;
   final String answer;
+  final String? imageUri;
   final bool showFront;
   final Color backColor;
 
@@ -57,6 +62,8 @@ class FlashcardDraft extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final image = getImage(imageUri);
+
     return Card(
       elevation: 5.0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -79,7 +86,7 @@ class FlashcardDraft extends StatelessWidget {
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 45),
+              padding: const EdgeInsets.symmetric(vertical: 20),
               child: Center(
                 child: Text(
                   showFront ? question : answer,
@@ -88,6 +95,14 @@ class FlashcardDraft extends StatelessWidget {
               ),
             ),
           ),
+          if (image != null)
+            Expanded(
+              flex: 5,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: image,
+              ),
+            )
         ]),
       ),
     );

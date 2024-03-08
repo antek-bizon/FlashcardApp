@@ -74,8 +74,17 @@ class DatabaseRepository {
         final id = e.id;
         final question = e.getStringValue("question");
         final answer = e.getStringValue("answer");
+        final imageFilename = e.getStringValue("image");
+        final imageUri = (imageFilename.isNotEmpty)
+            ? _pb.files.getUrl(e, imageFilename)
+            : null;
 
-        return FlashcardModel(question: question, answer: answer, id: id);
+        return FlashcardModel(
+          question: question,
+          answer: answer,
+          id: id,
+          imageUri: (imageUri != null) ? imageUri.toString() : null,
+        );
       }).toList();
     } on ClientException catch (err) {
       throw err.response["message"].toString();

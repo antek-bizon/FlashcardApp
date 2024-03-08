@@ -1,17 +1,17 @@
 class FlashcardModel {
   String question;
   String answer;
-  String? image;
+  String? imageUri;
   String? id;
 
   FlashcardModel(
-      {required this.question, required this.answer, this.image, this.id});
+      {required this.question, required this.answer, this.imageUri, this.id});
 
   Map<String, dynamic> toJson() {
     return {
       'question': question,
       'answer': answer,
-      'image': image ?? "",
+      'image': imageUri ?? "",
       'id': id ?? ""
     };
   }
@@ -27,7 +27,7 @@ class FlashcardModel {
 
   @override
   String toString() {
-    return "Flashcard: id: $id, question: $question, answer: $answer, image: $image";
+    return "Flashcard: id: $id, question: $question, answer: $answer, image: $imageUri";
   }
 }
 

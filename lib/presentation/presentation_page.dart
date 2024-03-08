@@ -47,8 +47,11 @@ class _PresentationPageState extends State<PresentationPage> {
           children: widget.flashcards
               .map((e) => Padding(
                     padding: const EdgeInsets.all(50.0),
-                    child:
-                        FlashcardWidget(question: e.question, answer: e.answer),
+                    child: FlashcardWidget(
+                      question: e.question,
+                      answer: e.answer,
+                      imageUri: e.imageUri,
+                    ),
                   ))
               .toList(growable: false),
         ),

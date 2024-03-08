@@ -21,14 +21,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final _key = GlobalKey<ScaffoldState>();
-
   @override
   void initState() {
     super.initState();
-    context
-        .read<GroupCubit>()
-        .fetchGroups(BlocProvider.of<AuthCubit>(context).state);
+    context.read<GroupCubit>().fetchGroups(authState(context));
   }
 
   @override
@@ -37,25 +33,9 @@ class _HomePageState extends State<HomePage> {
         onPop: () {
           context.read<AuthCubit>().logout();
         },
-        bottomBarItems: [
-          IconButton(
-            onPressed: () {
-              _key.currentState!.openDrawer();
-            },
-            icon: const Icon(Icons.settings),
-          ),
-          addSpacing(width: 30),
-          IconButton(
-            onPressed: () {
-              // Trigger the reload by changing the key
-              setState(() {
-                _key.currentState?.openEndDrawer();
-              });
-              // TODO
-              // Maybe add fetch groups here
-            },
-            icon: const Icon(Icons.replay_outlined),
-          )
+        bottomBarFuntions: [
+          () => {},
+          () => context.read<GroupCubit>().fetchGroups(authState(context))
         ],
         onFABPress: () => showAddDialog(context),
         themeSelector: BlocBuilder<ThemeCubit, ThemeState>(
@@ -154,14 +134,14 @@ class _HomePageState extends State<HomePage> {
 class HomePageBody extends StatefulWidget {
   final VoidCallback onPop;
   final VoidCallback onFABPress;
-  final List<Widget> bottomBarItems;
+  final List<VoidCallback> bottomBarFuntions;
   final Widget child;
   final Widget themeSelector;
 
   const HomePageBody(
       {super.key,
       required this.onPop,
-      required this.bottomBarItems,
+      required this.bottomBarFuntions,
       required this.onFABPress,
       required this.child,
       required this.themeSelector});
@@ -201,7 +181,23 @@ class _HomePageBodyState extends State<HomePageBody> {
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           crossAxisAlignment: CrossAxisAlignment.center,
-          children: widget.bottomBarItems,
+          children: [
+            IconButton(
+              onPressed: () {
+                _key.currentState?.openDrawer();
+                widget.bottomBarFuntions[0]();
+              },
+              icon: const Icon(Icons.settings),
+            ),
+            addSpacing(width: 30),
+            IconButton(
+              onPressed: () {
+                _key.currentState?.closeDrawer();
+                widget.bottomBarFuntions[1]();
+              },
+              icon: const Icon(Icons.replay_outlined),
+            )
+          ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
