@@ -1,5 +1,7 @@
 import 'package:flashcards/data/models/flashcard.dart';
 import 'package:flashcards/presentation/widgets/dropdown_image.dart';
+import 'package:flashcards/presentation/widgets/rich_text_editor/src/spannable_text.dart';
+import 'package:flashcards/presentation/widgets/rich_text_editor/src/style_toolbar.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flutter/material.dart';
 
@@ -16,7 +18,7 @@ class FlashcardListItem extends StatefulWidget {
   final String flashcardKey;
   final int index;
   final VoidCallback onDelete;
-  final Function() onUpdate;
+  final void Function() onUpdate;
 
   @override
   State<FlashcardListItem> createState() => _FlashcardListItemState();
@@ -26,12 +28,13 @@ class _FlashcardListItemState extends State<FlashcardListItem> {
   bool editable = false;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late TextEditingController _questionField;
-  late TextEditingController _answerField;
+  late SpannableTextEditingController _answerField;
 
   @override
   void initState() {
     _questionField = TextEditingController(text: widget.flashcard.question);
-    _answerField = TextEditingController(text: widget.flashcard.answer);
+    _answerField = SpannableTextEditingController.fromJson(
+        text: widget.flashcard.answer, styleJson: widget.flashcard.textStyle);
     super.initState();
   }
 
@@ -50,9 +53,10 @@ class _FlashcardListItemState extends State<FlashcardListItem> {
     setState(() {
       widget.flashcard.question = _questionField.text;
       widget.flashcard.answer = _answerField.text;
+      widget.flashcard.textStyle = _answerField.styleList.toJson();
     });
 
-    await widget.onUpdate();
+    widget.onUpdate();
   }
 
   @override
@@ -108,6 +112,12 @@ class _FlashcardListItemState extends State<FlashcardListItem> {
                               },
                             ),
                           ),
+                          if (editable)
+                            Padding(
+                              padding:
+                                  const EdgeInsets.only(bottom: 3.0, top: 5.0),
+                              child: StyleToolbar(controller: _answerField),
+                            ),
                         ],
                       ),
                     ),

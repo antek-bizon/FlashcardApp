@@ -11,6 +11,7 @@ import 'package:flashcards/presentation/login_page.dart';
 import 'package:flashcards/data/repositories/theme.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -55,6 +56,11 @@ class AppView extends StatelessWidget {
     final lightScheme = ColorScheme.fromSeed(seedColor: Colors.greenAccent);
     final darkScheme = ColorScheme.fromSeed(
         seedColor: Colors.pink, brightness: Brightness.dark);
+
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
 
     return BlocBuilder<ThemeCubit, ThemeState>(builder: (context, state) {
       return MaterialApp(

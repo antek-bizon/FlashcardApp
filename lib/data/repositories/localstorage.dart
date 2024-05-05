@@ -68,7 +68,8 @@ class LocalStorageRepository {
         .map(((e) => FlashcardModel(
             question: e["question"],
             answer: e["answer"],
-            imageUri: e["image"])))
+            imageUri: e["image"],
+            textStyle: e["text_style"])))
         .toList();
 
     return flashcards;

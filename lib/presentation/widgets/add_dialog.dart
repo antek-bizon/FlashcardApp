@@ -129,120 +129,123 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      child: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: SizedBox(
-          width: min(MediaQuery.of(context).size.width * 0.8, 400),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text("Add flashcard"),
-              const SizedBox(height: 15),
-              Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        controller: _questionField,
-                        decoration: const InputDecoration(
-                            hintText: "Question",
-                            contentPadding: EdgeInsets.only(left: 5)),
-                        validator: (String? value) {
-                          if (value == null || value.isEmpty) {
-                            return "Please enter some question";
-                          }
-                          return null;
-                        },
-                        onChanged: (_) {
-                          if (isError) {
-                            setState(() {
-                              isError = false;
-                            });
-                          }
-                        },
-                      ),
-                      TextFormField(
-                        controller: _answerField,
-                        decoration: const InputDecoration(
-                            hintText: "Answer",
-                            contentPadding: EdgeInsets.only(left: 5)),
-                        validator: (String? value) {
-                          if (value == null || value.isEmpty) {
-                            return "Please enter some answer";
-                          }
+      child: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: Padding(
+          padding: const EdgeInsets.all(15.0),
+          child: SizedBox(
+            width: min(MediaQuery.of(context).size.width * 0.8, 400),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text("Add flashcard"),
+                const SizedBox(height: 15),
+                Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: _questionField,
+                          decoration: const InputDecoration(
+                              hintText: "Question",
+                              contentPadding: EdgeInsets.only(left: 5)),
+                          validator: (String? value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter some question";
+                            }
+                            return null;
+                          },
+                          onChanged: (_) {
+                            if (isError) {
+                              setState(() {
+                                isError = false;
+                              });
+                            }
+                          },
+                        ),
+                        TextFormField(
+                          controller: _answerField,
+                          decoration: const InputDecoration(
+                              hintText: "Answer",
+                              contentPadding: EdgeInsets.only(left: 5)),
+                          validator: (String? value) {
+                            if (value == null || value.isEmpty) {
+                              return "Please enter some answer";
+                            }
 
-                          return null;
-                        },
-                        onChanged: (_) {
-                          if (isError) {
-                            setState(() {
-                              isError = false;
-                            });
-                          }
-                        },
-                      ),
-                      FormBuilderImagePicker(
-                        transformImageWidget: (context, displayImage) => Card(
-                            // shape: const CircleBorder(),
-                            clipBehavior: Clip.antiAlias,
-                            child: Center(child: displayImage)),
-                        name: 'photos',
-                        maxImages: 1,
-                        previewAutoSizeWidth: true,
-                        availableImageSources: const [
-                          ImageSourceOption.gallery
-                        ],
-                        onChanged: _onImage,
-                      ),
-                    ],
-                  )),
-              const SizedBox(height: 15),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text("Cancel"),
-                  ),
-                  ElevatedButton(
+                            return null;
+                          },
+                          onChanged: (_) {
+                            if (isError) {
+                              setState(() {
+                                isError = false;
+                              });
+                            }
+                          },
+                        ),
+                        FormBuilderImagePicker(
+                          transformImageWidget: (context, displayImage) => Card(
+                              // shape: const CircleBorder(),
+                              clipBehavior: Clip.antiAlias,
+                              child: Center(child: displayImage)),
+                          name: 'photos',
+                          maxImages: 1,
+                          previewAutoSizeWidth: true,
+                          availableImageSources: const [
+                            ImageSourceOption.gallery
+                          ],
+                          onChanged: _onImage,
+                        ),
+                      ],
+                    )),
+                const SizedBox(height: 15),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
                       onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          final validationItem = FlashcardModel(
-                              question: _questionField.text,
-                              answer: _answerField.text);
-
-                          if (widget.existingFlashcards
-                              .contains(validationItem)) {
-                            setState(() {
-                              isError = true;
-                            });
-                          } else {
-                            widget.onAdd(
-                                _questionField.text, _answerField.text, _img);
-                            Navigator.pop(context);
-                          }
-                        }
+                        Navigator.pop(context);
                       },
-                      child: const Text("Add"))
-                ],
-              ),
-              Visibility(
-                  visible: isError,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 8.0, horizontal: 35.0),
-                    child: Text(
-                      "There is already Flashcard with the same question and answer.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.error),
+                      child: const Text("Cancel"),
                     ),
-                  ))
-            ],
+                    ElevatedButton(
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            final validationItem = FlashcardModel(
+                                question: _questionField.text,
+                                answer: _answerField.text);
+
+                            if (widget.existingFlashcards
+                                .contains(validationItem)) {
+                              setState(() {
+                                isError = true;
+                              });
+                            } else {
+                              widget.onAdd(
+                                  _questionField.text, _answerField.text, _img);
+                              Navigator.pop(context);
+                            }
+                          }
+                        },
+                        child: const Text("Add"))
+                  ],
+                ),
+                Visibility(
+                    visible: isError,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8.0, horizontal: 35.0),
+                      child: Text(
+                        "There is already Flashcard with the same question and answer.",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.error),
+                      ),
+                    ))
+              ],
+            ),
           ),
         ),
       ),

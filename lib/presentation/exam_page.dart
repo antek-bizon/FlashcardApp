@@ -184,6 +184,7 @@ class _ExamPageState extends State<ExamPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(
           "Score: $score",
@@ -227,6 +228,7 @@ class _ExamPageState extends State<ExamPage> {
                       question: e.question,
                       answer: e.answer,
                       imageUri: e.imageUri,
+                      textStyle: e.textStyle,
                       showFront: e.state == ExamItemState.none,
                       backColor: e.state == ExamItemState.wrong
                           ? const Color.fromARGB(255, 255, 4, 0)

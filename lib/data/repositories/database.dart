@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flashcards/data/models/flashcard.dart';
 import 'package:form_builder_image_picker/form_builder_image_picker.dart';
@@ -78,13 +79,14 @@ class DatabaseRepository {
         final imageUri = (imageFilename.isNotEmpty)
             ? _pb.files.getUrl(e, imageFilename)
             : null;
+        final textStyle = jsonEncode(e.getListValue<String>("text_style"));
 
         return FlashcardModel(
-          question: question,
-          answer: answer,
-          id: id,
-          imageUri: (imageUri != null) ? imageUri.toString() : null,
-        );
+            question: question,
+            answer: answer,
+            id: id,
+            imageUri: (imageUri != null) ? imageUri.toString() : null,
+            textStyle: textStyle);
       }).toList();
     } on ClientException catch (err) {
       throw err.response["message"].toString();
@@ -145,7 +147,11 @@ class DatabaseRepository {
         throw "Cannot update flashcard. Id is null";
       }
 
-      final body = {"question": item.question, "answer": item.answer};
+      final body = {
+        "question": item.question,
+        "answer": item.answer,
+        "text_style": item.textStyle
+      };
 
       await _pb.collection("flashcards").update(id, body: body);
     } on ClientException catch (err) {

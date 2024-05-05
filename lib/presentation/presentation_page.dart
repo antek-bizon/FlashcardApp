@@ -51,6 +51,7 @@ class _PresentationPageState extends State<PresentationPage> {
                       question: e.question,
                       answer: e.answer,
                       imageUri: e.imageUri,
+                      textStyle: e.textStyle,
                     ),
                   ))
               .toList(growable: false),

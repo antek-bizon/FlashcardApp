@@ -1,3 +1,4 @@
+import 'package:flashcards/presentation/widgets/rich_text_editor/src/spannable_list.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flutter/material.dart';
 
@@ -5,9 +6,14 @@ class FlashcardWidget extends StatefulWidget {
   final String question;
   final String answer;
   final String? imageUri;
+  final String? textStyle;
 
   const FlashcardWidget(
-      {super.key, required this.question, required this.answer, this.imageUri});
+      {super.key,
+      required this.question,
+      required this.answer,
+      this.imageUri,
+      this.textStyle});
 
   @override
   State<FlashcardWidget> createState() => _FlashcardWidgetState();
@@ -31,6 +37,7 @@ class _FlashcardWidgetState extends State<FlashcardWidget> {
         answer: widget.answer,
         showFront: _showFront,
         imageUri: widget.imageUri,
+        textStyle: widget.textStyle,
       ),
     );
   }
@@ -42,11 +49,13 @@ class FlashcardDraft extends StatelessWidget {
       required this.question,
       required this.answer,
       this.imageUri,
+      this.textStyle,
       required this.showFront,
       this.backColor = Colors.lightGreen});
   final String question;
   final String answer;
   final String? imageUri;
+  final String? textStyle;
   final bool showFront;
   final Color backColor;
 
@@ -63,6 +72,9 @@ class FlashcardDraft extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final image = getImage(imageUri);
+    final list = (textStyle != null)
+        ? SpannableList.fromJson(textStyle!, answer.length)
+        : SpannableList.generate(answer.length);
 
     return Card(
       elevation: 5.0,
@@ -88,10 +100,14 @@ class FlashcardDraft extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: Center(
-                child: Text(
-                  showFront ? question : answer,
-                  style: const TextStyle(fontSize: 20.0),
-                ),
+                child: showFront
+                    ? Text(
+                        question,
+                        style: const TextStyle(fontSize: 20.0),
+                      )
+                    : RichText(
+                        text: list.toTextSpan(answer,
+                            defaultStyle: const TextStyle(fontSize: 20.0))),
               ),
             ),
           ),

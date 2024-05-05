@@ -3,16 +3,22 @@ class FlashcardModel {
   String answer;
   String? imageUri;
   String? id;
+  String? textStyle;
 
   FlashcardModel(
-      {required this.question, required this.answer, this.imageUri, this.id});
+      {required this.question,
+      required this.answer,
+      this.imageUri,
+      this.id,
+      this.textStyle});
 
   Map<String, dynamic> toJson() {
     return {
       'question': question,
       'answer': answer,
       'image': imageUri ?? "",
-      'id': id ?? ""
+      'id': id ?? "",
+      'text_style': textStyle ?? ""
     };
   }
 
