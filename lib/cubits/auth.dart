@@ -23,6 +23,13 @@ class AuthCubit extends Cubit<AuthState> {
       : _dbr = databaseRepository,
         super(InitAuthState());
 
+  void autoLogin() {
+    if (_dbr.validateToken()) {
+      emit(SuccessAuthState());
+      _dbr.refreshToken();
+    }
+  }
+
   Future<void> login(String username, String password /*, bool save*/) async {
     emit(LoadingAuthState());
     try {

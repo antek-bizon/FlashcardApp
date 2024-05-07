@@ -33,7 +33,8 @@ class App extends StatelessWidget {
         BlocProvider(
             create: (context) =>
                 ThemeCubit(themeRepository)..getCurrentTheme()),
-        BlocProvider(create: (context) => AuthCubit(databaseRepository)),
+        BlocProvider(
+            create: (context) => AuthCubit(databaseRepository)..autoLogin()),
         BlocProvider(
             create: (context) => GroupCubit(
                 databaseRepository: databaseRepository,
@@ -64,36 +65,35 @@ class AppView extends StatelessWidget {
 
     return BlocBuilder<ThemeCubit, ThemeState>(builder: (context, state) {
       return MaterialApp(
-          title: 'Flashcards',
-          theme: ThemeData(
-              colorScheme: lightScheme,
-              useMaterial3: true,
-              textTheme: GoogleFonts.mulishTextTheme()),
-          darkTheme: ThemeData(
-              colorScheme: darkScheme,
-              useMaterial3: true,
-              textTheme: GoogleFonts.mulishTextTheme(const TextTheme(
-                  titleMedium: TextStyle(color: Colors.white)))),
-          themeMode: state.mode,
-          routes: {
-            LoginPage.route: (_) => const LoginPage(),
-            HomePage.route: (_) => const HomePage(),
-          },
-          onGenerateRoute: (settings) {
-            if (settings.name == GroupPage.route) {
-              final args = settings.arguments as GroupPageArguments;
-              return MaterialPageRoute(
-                  settings: RouteSettings(name: "/${args.groupName}"),
-                  builder: (context) => GroupPage(
-                        groupName: args.groupName,
-                        groupId: args.groupId,
-                      ));
-            }
-            return null;
-          },
-          home: BlocBuilder<AuthCubit, AuthState>(builder: (context, state) {
-            return const LoginPage();
-          }));
+        title: 'Flashcards',
+        theme: ThemeData(
+            colorScheme: lightScheme,
+            useMaterial3: true,
+            textTheme: GoogleFonts.mulishTextTheme()),
+        darkTheme: ThemeData(
+            colorScheme: darkScheme,
+            useMaterial3: true,
+            textTheme: GoogleFonts.mulishTextTheme(
+                const TextTheme(titleMedium: TextStyle(color: Colors.white)))),
+        themeMode: state.mode,
+        routes: {
+          LoginPage.route: (_) => const LoginPage(),
+          HomePage.route: (_) => const HomePage(),
+        },
+        onGenerateRoute: (settings) {
+          if (settings.name == GroupPage.route) {
+            final args = settings.arguments as GroupPageArguments;
+            return MaterialPageRoute(
+                settings: RouteSettings(name: "/${args.groupName}"),
+                builder: (context) => GroupPage(
+                      groupName: args.groupName,
+                      groupId: args.groupId,
+                    ));
+          }
+          return null;
+        },
+        home: const LoginPage(),
+      );
     });
   }
 }

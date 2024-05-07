@@ -22,6 +22,11 @@ class LoginPage extends StatelessWidget {
       body: DefaultBody(
         child: BlocConsumer<AuthCubit, AuthState>(
           builder: (context, state) {
+            if (state is SuccessAuthState) {
+              Future.microtask(
+                  () => Navigator.pushNamed(context, HomePage.route));
+            }
+
             final cubit = context.read<AuthCubit>();
             return LoginBackgroud(
               child: LoginForm(

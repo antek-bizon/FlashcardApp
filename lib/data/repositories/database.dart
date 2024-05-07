@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 class DatabaseRepository {
   final PocketBase _pb;
 
-  DatabaseRepository(String baseUrl) : _pb = PocketBase(baseUrl);
+  DatabaseRepository(PocketBase pb) : _pb = pb;
 
   Future<void> login(String email, String password) async {
     try {
@@ -17,6 +17,16 @@ class DatabaseRepository {
     } on ClientException catch (err) {
       throw err.response["message"].toString();
     }
+  }
+
+  bool validateToken() {
+    return _pb.authStore.isValid;
+  }
+
+  Future<void> refreshToken() async {
+    try {
+      await _pb.collection("users").authRefresh();
+    } catch (_) {}
   }
 
   void logout() {

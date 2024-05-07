@@ -11,6 +11,7 @@ import 'package:flashcards/app.dart';
 import 'package:flashcards/data/repositories/database.dart';
 import 'package:flashcards/data/repositories/localstorage.dart';
 import 'package:flashcards/data/repositories/theme.dart';
+import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -20,7 +21,7 @@ void main() {
     await tester.pumpWidget(App(
         themeRepository: ThemeRepository(pref),
         databaseRepository:
-            DatabaseRepository("https://antek-bizon.xinit.se/pb/"),
+            DatabaseRepository(PocketBase("https://antek-bizon.xinit.se/pb/")),
         localStorageRepository: LocalStorageRepository(pref)));
 
     // Verify that our counter starts at 0.
