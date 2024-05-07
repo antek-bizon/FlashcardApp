@@ -16,7 +16,10 @@ Future<void> main() async {
   runApp(App(
       themeRepository: ThemeRepository(prefs),
       databaseRepository: DatabaseRepository(
-        PocketBase("https://antek-bizon.xinit.se/pb/", authStore: store),
+        PocketBase(
+          "https://antek-bizon.xinit.se/pb/",
+          authStore: store,
+        ),
       ),
       localStorageRepository: LocalStorageRepository(prefs)));
 }

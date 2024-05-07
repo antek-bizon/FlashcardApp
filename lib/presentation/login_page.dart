@@ -22,7 +22,8 @@ class LoginPage extends StatelessWidget {
       body: DefaultBody(
         child: BlocConsumer<AuthCubit, AuthState>(
           builder: (context, state) {
-            if (state is SuccessAuthState) {
+            if (state is SuccessAuthState && state.autoLogin) {
+              print("builder");
               Future.microtask(
                   () => Navigator.pushNamed(context, HomePage.route));
             }
@@ -38,7 +39,8 @@ class LoginPage extends StatelessWidget {
             );
           },
           listener: (context, state) {
-            if (state is SuccessAuthState || state is GuestAuthState) {
+            if ((state is SuccessAuthState) || state is GuestAuthState) {
+              print("listener");
               Navigator.pushNamed(context, HomePage.route);
             } else if (state is ErrorAuthState) {
               ScaffoldMessenger.of(context)

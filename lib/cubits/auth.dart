@@ -12,7 +12,10 @@ class ErrorAuthState extends AuthState {
   ErrorAuthState(this.message);
 }
 
-class SuccessAuthState extends AuthState {}
+class SuccessAuthState extends AuthState {
+  bool autoLogin;
+  SuccessAuthState({this.autoLogin = false});
+}
 
 class GuestAuthState extends AuthState {}
 
@@ -25,7 +28,7 @@ class AuthCubit extends Cubit<AuthState> {
 
   void autoLogin() {
     if (_dbr.validateToken()) {
-      emit(SuccessAuthState());
+      emit(SuccessAuthState(autoLogin: true));
       _dbr.refreshToken();
     }
   }
