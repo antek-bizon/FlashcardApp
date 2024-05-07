@@ -54,7 +54,7 @@ class ThemeRepository implements ThemePersistence {
       final themeMode = ThemeMode.values.byName(themeString);
       _controller.add(themeMode);
     } catch (_) {
-      _controller.add(ThemeMode.light);
+      _controller.add(ThemeMode.system);
     }
   }
 }

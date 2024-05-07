@@ -39,23 +39,29 @@ class _HomePageState extends State<HomePage> {
         ],
         onFABPress: () => showAddDialog(context),
         themeSelector: BlocBuilder<ThemeCubit, ThemeState>(
-          builder: (context, state) => ListTile(
-            title: const Text('Theme Selection'),
-            subtitle: DropdownButton<ThemeMode>(
-              alignment: Alignment.center,
-              borderRadius: BorderRadius.circular(30),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 13,
-                vertical: 6,
+          builder: (context, state) {
+            if (state.message != null) {
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(quickSnack(state.message!));
+            }
+            return ListTile(
+              title: const Text('Theme Selection'),
+              subtitle: DropdownButton<ThemeMode>(
+                alignment: Alignment.center,
+                borderRadius: BorderRadius.circular(30),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 13,
+                  vertical: 6,
+                ),
+                value: state.mode,
+                items: _dropdownMenuItems(),
+                onChanged: (ThemeMode? mode) {
+                  if (mode == null) return;
+                  context.read<ThemeCubit>().setTheme(mode);
+                },
               ),
-              value: state.mode,
-              items: _dropdownMenuItems(),
-              onChanged: (ThemeMode? mode) {
-                if (mode == null) return;
-                context.read<ThemeCubit>().setTheme(mode);
-              },
-            ),
-          ),
+            );
+          },
         ),
         child: BlocConsumer<GroupCubit, GroupState>(
           builder: (context, state) {

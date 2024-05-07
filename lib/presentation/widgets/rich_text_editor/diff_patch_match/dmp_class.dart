@@ -507,7 +507,7 @@ class DiffMatchPatch {
   /// [text2] is the second string.
   /// Returns the number of characters common to the start of each string.
   int diffCommonPrefix(String text1, String text2) {
-    // TODO: Once Dart's performance stabilizes, determine if linear or binary
+    // todo: Once Dart's performance stabilizes, determine if linear or binary
     // search is better.
     // Performance analysis: https://neil.fraser.name/news/2007/10/09/
     final n = min(text1.length, text2.length);
@@ -524,7 +524,7 @@ class DiffMatchPatch {
   /// [text2] is the second string.
   /// Returns the number of characters common to the end of each string.
   int diffCommonSuffix(String text1, String text2) {
-    // TODO: Once Dart's performance stabilizes, determine if linear or binary
+    // todo: Once Dart's performance stabilizes, determine if linear or binary
     // search is better.
     // Performance analysis: https://neil.fraser.name/news/2007/10/09/
     final text1Length = text1.length;
@@ -797,15 +797,15 @@ class DiffMatchPatch {
   /// e.g: The c<ins>at c</ins>ame. -> The <ins>cat </ins>came.
   /// [diffs] is a List of Diff objects.
   void _diffCleanupSemanticLossless(List<Diff> diffs) {
-    /**
-     * Given two strings, compute a score representing whether the internal
-     * boundary falls on logical boundaries.
-     * Scores range from 6 (best) to 0 (worst).
-     * Closure, but does not reference any external variables.
-     * [one] the first string.
-     * [two] the second string.
-     * Returns the score.
-     */
+    ///
+    /// Given two strings, compute a score representing whether the internal
+    /// boundary falls on logical boundaries.
+    /// Scores range from 6 (best) to 0 (worst).
+    /// Closure, but does not reference any external variables.
+    /// [one] the first string.
+    /// [two] the second string.
+    /// Returns the score.
+    ///
     int diffCleanupSemanticScore(String one, String two) {
       if (one.isEmpty || two.isEmpty) {
         // Edges are the best.

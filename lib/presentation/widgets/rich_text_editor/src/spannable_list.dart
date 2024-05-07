@@ -15,15 +15,12 @@ class SpannableList {
 
   factory SpannableList.fromJson(String styleJson, int length) {
     try {
-      print(styleJson);
       var list = json.decode(styleJson);
       var decodedList = list
           .map((e) => SpannableStyle(value: int.parse(e, radix: 36)))
           .toList();
       return SpannableList(decodedList.cast<SpannableStyle>());
     } catch (ex) {
-      print("factory failed");
-      print(ex);
       return SpannableList.generate(length);
     }
   }
