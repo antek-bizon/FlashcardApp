@@ -2,10 +2,8 @@ import 'package:flashcards/cubits/auth.dart';
 import 'package:flashcards/cubits/flashcards.dart';
 import 'package:flashcards/cubits/groups.dart';
 import 'package:flashcards/cubits/theme.dart';
-import 'package:flashcards/data/models/group_page_arguments.dart';
 import 'package:flashcards/data/repositories/database.dart';
 import 'package:flashcards/data/repositories/localstorage.dart';
-import 'package:flashcards/presentation/group_page.dart';
 import 'package:flashcards/presentation/home_page.dart';
 import 'package:flashcards/presentation/login_page.dart';
 import 'package:flashcards/data/repositories/theme.dart';
@@ -76,33 +74,26 @@ class AppView extends StatelessWidget {
             textTheme: GoogleFonts.mulishTextTheme(
                 const TextTheme(titleMedium: TextStyle(color: Colors.white)))),
         themeMode: state.mode,
-        routes: {
-          LoginPage.route: (_) => const LoginPage(),
-          HomePage.route: (_) => const HomePage(),
-        },
-        onGenerateRoute: (settings) {
-          if (settings.name == GroupPage.route) {
-            final args = settings.arguments as GroupPageArguments;
-            return MaterialPageRoute(
-                settings: RouteSettings(name: "/${args.groupName}"),
-                builder: (context) => GroupPage(
-                      groupName: args.groupName,
-                      groupId: args.groupId,
-                    ));
-          }
-          return null;
-        },
-        home: const LoginPage(),
+        home: BlocBuilder<AuthCubit, AuthState>(
+          builder: (context, state) {
+            return AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              switchInCurve: Curves.easeIn,
+              switchOutCurve: const Threshold(0),
+              transitionBuilder: (child, animation) => SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1.0, 0.0),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              ),
+              child: state is SuccessAuthState || state is GuestAuthState
+                  ? const HomePage()
+                  : const LoginPage(),
+            );
+          },
+        ),
       );
     });
-  }
-}
-
-class SplashScreen extends StatelessWidget {
-  const SplashScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Placeholder();
   }
 }

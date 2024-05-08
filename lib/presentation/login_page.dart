@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:flashcards/cubits/auth.dart';
-import 'package:flashcards/presentation/home_page.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/presentation/widgets/default_body.dart';
 import 'package:flashcards/presentation/widgets/my_snack_bar.dart';
@@ -10,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class LoginPage extends StatelessWidget {
-  static const String route = "/login";
   const LoginPage({
     super.key,
   });
@@ -22,12 +20,6 @@ class LoginPage extends StatelessWidget {
       body: DefaultBody(
         child: BlocConsumer<AuthCubit, AuthState>(
           builder: (context, state) {
-            if (state is SuccessAuthState && state.autoLogin) {
-              print("builder");
-              Future.microtask(
-                  () => Navigator.pushNamed(context, HomePage.route));
-            }
-
             final cubit = context.read<AuthCubit>();
             return LoginBackgroud(
               child: LoginForm(
@@ -39,10 +31,7 @@ class LoginPage extends StatelessWidget {
             );
           },
           listener: (context, state) {
-            if ((state is SuccessAuthState) || state is GuestAuthState) {
-              print("listener");
-              Navigator.pushNamed(context, HomePage.route);
-            } else if (state is ErrorAuthState) {
+            if (state is ErrorAuthState) {
               ScaffoldMessenger.of(context)
                   .showSnackBar(quickSnack(state.message));
             }

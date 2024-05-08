@@ -16,7 +16,6 @@ enum MenuItem {
 }
 
 class GroupPage extends StatefulWidget {
-  static const String route = "/groupPage";
   final String groupName;
   final String? groupId;
 

@@ -2,7 +2,6 @@ import 'package:flashcards/cubits/auth.dart';
 import 'package:flashcards/cubits/groups.dart';
 import 'package:flashcards/cubits/theme.dart';
 import 'package:flashcards/data/models/flashcard.dart';
-import 'package:flashcards/data/models/group_page_arguments.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/presentation/widgets/add_dialog.dart';
 import 'package:flashcards/presentation/group_page.dart';
@@ -13,7 +12,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class HomePage extends StatefulWidget {
   static const String title = "Flashcards App";
-  static const String route = "/home";
   const HomePage({super.key});
 
   @override
@@ -71,15 +69,14 @@ class _HomePageState extends State<HomePage> {
               return GroupList(
                 groups: groups,
                 onOpen: (groupName, groupId) {
-                  Navigator.pushNamed(
-                    context,
-                    GroupPage.route,
-                    arguments: GroupPageArguments(groupName, groupId, () {
-                      context
-                          .read<GroupCubit>()
-                          .removeGroup(authState(context), groupName, groupId);
-                    }),
-                  );
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => GroupPage(
+                          groupName: groupName,
+                          groupId: groupId,
+                        ),
+                      ));
                 },
                 onUpload: (groupName) => context
                     .read<GroupCubit>()
@@ -175,7 +172,6 @@ class _HomePageBodyState extends State<HomePageBody> {
               _tooltip = null;
             });
             widget.onPop();
-            Navigator.pop(context);
           },
         ),
         title: const Text(HomePage.title),

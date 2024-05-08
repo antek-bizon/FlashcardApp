@@ -83,27 +83,40 @@ class _FlashcardListItemState extends State<FlashcardListItem> {
                       key: _formKey,
                       child: Column(
                         children: [
-                          TextFormField(
-                            controller: _questionField,
-                            enabled: editable,
-                            decoration: const InputDecoration(
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2.0),
+                            child: TextFormField(
+                              controller: _questionField,
+                              enabled: editable,
+                              maxLines: 5,
+                              minLines: 1,
+                              keyboardType: TextInputType.multiline,
+                              decoration: const InputDecoration(
                                 hintText: "Question",
-                                contentPadding: EdgeInsets.only(left: 5)),
-                            validator: (String? value) {
-                              if (value == null || value.isEmpty) {
-                                return "Please enter some question";
-                              }
-                              return null;
-                            },
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 5, vertical: 10),
+                              ),
+                              validator: (String? value) {
+                                if (value == null || value.isEmpty) {
+                                  return "Please enter some question";
+                                }
+                                return null;
+                              },
+                            ),
                           ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 5.0),
+                            padding: const EdgeInsets.symmetric(vertical: 2.0),
                             child: TextFormField(
                               controller: _answerField,
                               enabled: editable,
+                              maxLines: 5,
+                              minLines: 1,
+                              keyboardType: TextInputType.multiline,
                               decoration: const InputDecoration(
-                                  hintText: "Answer",
-                                  contentPadding: EdgeInsets.only(left: 5)),
+                                hintText: "Answer",
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 5, vertical: 10),
+                              ),
                               validator: (String? value) {
                                 if (value == null || value.isEmpty) {
                                   return "Please enter some answer";
