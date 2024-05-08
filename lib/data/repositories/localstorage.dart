@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flashcards/data/models/flashcard.dart';
+import 'package:flashcards/presentation/widgets/rich_text_editor/src/spannable_list.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalStorageRepository {
@@ -64,13 +65,27 @@ class LocalStorageRepository {
 
     if (flashcardsJson == null) return [];
 
-    final flashcards = (jsonDecode(flashcardsJson) as List)
-        .map(((e) => FlashcardModel(
-            question: e["question"],
-            answer: e["answer"],
-            imageUri: e["image"],
-            textStyle: e["text_style"])))
-        .toList();
+    final List<FlashcardModel> flashcards = [];
+
+    for (final e in jsonDecode(flashcardsJson) as List) {
+      final question = e["question"];
+      final answer = e["answer"];
+
+      if (question == null || answer == null) continue;
+
+      final imageUri = e["image"];
+      final styleListString = e["style_list"];
+      final styleList = (styleListString != null)
+          ? SpannableList.fromRanges(
+              (styleListString as List).cast<List>(), answer.length)
+          : SpannableList.generate(answer.length);
+
+      flashcards.add(FlashcardModel(
+          question: question,
+          answer: answer,
+          imageUri: imageUri,
+          styleList: styleList));
+    }
 
     return flashcards;
   }

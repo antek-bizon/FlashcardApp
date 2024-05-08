@@ -1,6 +1,8 @@
 import 'dart:math';
 
 import 'package:flashcards/data/models/flashcard.dart';
+import 'package:flashcards/presentation/widgets/rich_text_editor/src/spannable_text.dart';
+import 'package:flashcards/presentation/widgets/rich_text_editor/src/style_toolbar.dart';
 import 'package:flutter/material.dart';
 import 'package:form_builder_image_picker/form_builder_image_picker.dart';
 
@@ -92,7 +94,7 @@ class _AddGroupDialogState extends State<AddGroupDialog> {
 }
 
 class AddFlashcardDialog extends StatefulWidget {
-  final Function(String, String, XFileImage?) onAdd;
+  final void Function(FlashcardModel, XFileImage?) onAdd;
   final List<FlashcardModel> existingFlashcards;
 
   const AddFlashcardDialog(
@@ -105,7 +107,7 @@ class AddFlashcardDialog extends StatefulWidget {
 class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final _questionField = TextEditingController();
-  final _answerField = TextEditingController();
+  final _answerField = SpannableTextEditingController.empty();
   XFileImage? _img;
   bool isError = false;
 
@@ -147,6 +149,9 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
                       children: [
                         TextFormField(
                           controller: _questionField,
+                          maxLines: 5,
+                          minLines: 1,
+                          keyboardType: TextInputType.multiline,
                           decoration: const InputDecoration(
                               hintText: "Question",
                               contentPadding: EdgeInsets.only(left: 5)),
@@ -166,6 +171,9 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
                         ),
                         TextFormField(
                           controller: _answerField,
+                          maxLines: 5,
+                          minLines: 1,
+                          keyboardType: TextInputType.multiline,
                           decoration: const InputDecoration(
                               hintText: "Answer",
                               contentPadding: EdgeInsets.only(left: 5)),
@@ -184,6 +192,7 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
                             }
                           },
                         ),
+                        StyleToolbar(controller: _answerField),
                         FormBuilderImagePicker(
                           transformImageWidget: (context, displayImage) => Card(
                               // shape: const CircleBorder(),
@@ -212,18 +221,17 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
                     ElevatedButton(
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
-                            final validationItem = FlashcardModel(
+                            final item = FlashcardModel(
                                 question: _questionField.text,
                                 answer: _answerField.text);
 
-                            if (widget.existingFlashcards
-                                .contains(validationItem)) {
+                            if (widget.existingFlashcards.contains(item)) {
                               setState(() {
                                 isError = true;
                               });
                             } else {
-                              widget.onAdd(
-                                  _questionField.text, _answerField.text, _img);
+                              item.styleList = _answerField.styleList;
+                              widget.onAdd(item, _img);
                               Navigator.pop(context);
                             }
                           }

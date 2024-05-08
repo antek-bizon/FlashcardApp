@@ -29,6 +29,12 @@ class SpannableTextEditingController extends TextEditingController {
     _currentComposingStyle = composingStyle ?? SpannableStyle();
   }
 
+  SpannableTextEditingController.empty({this.historyLength = 5})
+      : super(text: '') {
+    _currentStyleList = SpannableList.generate(0);
+    _currentComposingStyle = SpannableStyle();
+  }
+
   SpannableTextEditingController.fromJson({
     String text = '',
     String? styleJson,
@@ -65,6 +71,9 @@ class SpannableTextEditingController extends TextEditingController {
       {required BuildContext context,
       TextStyle? style,
       required bool withComposing}) {
+    // if (_currentStyleList.length < text.length) {
+    //   _currentStyleList.insert(text.length, SpannableStyle());
+    // }
     return _currentStyleList.toTextSpan(text,
         defaultStyle: style ?? const TextStyle());
   }

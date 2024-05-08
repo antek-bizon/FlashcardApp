@@ -1,19 +1,23 @@
+import 'package:flashcards/data/models/flashcard.dart';
 import 'package:flashcards/presentation/widgets/rich_text_editor/src/spannable_list.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flutter/material.dart';
 
 class FlashcardWidget extends StatefulWidget {
-  final String question;
-  final String answer;
-  final String? imageUri;
-  final String? textStyle;
+  // final String question;
+  // final String answer;
+  // final String? imageUri;
+  // final String? textStyle;
+  final FlashcardModel item;
 
-  const FlashcardWidget(
-      {super.key,
-      required this.question,
-      required this.answer,
-      this.imageUri,
-      this.textStyle});
+  const FlashcardWidget({
+    super.key,
+    required this.item,
+    // required this.question,
+    // required this.answer,
+    // this.imageUri,
+    // this.textStyle
+  });
 
   @override
   State<FlashcardWidget> createState() => _FlashcardWidgetState();
@@ -33,11 +37,12 @@ class _FlashcardWidgetState extends State<FlashcardWidget> {
     return GestureDetector(
       onTap: _toggleCard,
       child: FlashcardDraft(
-        question: widget.question,
-        answer: widget.answer,
+        // question: widget.item.question,
+        // answer: widget.item.answer,
+        // imageUri: widget.item.imageUri,
+        // textStyle: widget.item.textStyle,
+        item: widget.item,
         showFront: _showFront,
-        imageUri: widget.imageUri,
-        textStyle: widget.textStyle,
       ),
     );
   }
@@ -46,16 +51,18 @@ class _FlashcardWidgetState extends State<FlashcardWidget> {
 class FlashcardDraft extends StatelessWidget {
   const FlashcardDraft(
       {super.key,
-      required this.question,
-      required this.answer,
-      this.imageUri,
-      this.textStyle,
+      required this.item,
+      // required this.question,
+      // required this.answer,
+      // this.imageUri,
+      // this.textStyle,
       required this.showFront,
       this.backColor = Colors.lightGreen});
-  final String question;
-  final String answer;
-  final String? imageUri;
-  final String? textStyle;
+  // final String question;
+  // final String answer;
+  // final String? imageUri;
+  // final String? textStyle;
+  final FlashcardModel item;
   final bool showFront;
   final Color backColor;
 
@@ -71,10 +78,8 @@ class FlashcardDraft extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final image = getImage(imageUri);
-    final list = (textStyle != null)
-        ? SpannableList.fromJson(textStyle!, answer.length)
-        : SpannableList.generate(answer.length);
+    final image = getImage(item.imageUri);
+    final list = item.styleList ?? SpannableList.generate(item.answer.length);
 
     return Card(
       elevation: 5.0,
@@ -102,11 +107,11 @@ class FlashcardDraft extends StatelessWidget {
               child: Center(
                 child: showFront
                     ? Text(
-                        question,
+                        item.question,
                         style: const TextStyle(fontSize: 20.0),
                       )
                     : RichText(
-                        text: list.toTextSpan(answer,
+                        text: list.toTextSpan(item.answer,
                             defaultStyle: const TextStyle(fontSize: 20.0))),
               ),
             ),

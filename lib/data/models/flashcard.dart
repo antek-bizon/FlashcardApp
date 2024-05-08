@@ -1,25 +1,38 @@
+import 'package:flashcards/presentation/widgets/rich_text_editor/src/spannable_list.dart';
+
 class FlashcardModel {
   String question;
   String answer;
   String? imageUri;
   String? id;
-  String? textStyle;
+  SpannableList? styleList;
 
   FlashcardModel(
       {required this.question,
       required this.answer,
       this.imageUri,
       this.id,
-      this.textStyle});
+      this.styleList});
 
   Map<String, dynamic> toJson() {
-    return {
+    final Map<String, dynamic> map = {
       'question': question,
       'answer': answer,
-      'image': imageUri ?? "",
-      'id': id ?? "",
-      'text_style': textStyle ?? ""
     };
+
+    if (imageUri != null) {
+      map['image'] = imageUri!;
+    }
+
+    if (id != null) {
+      map['id'] = id!;
+    }
+
+    if (styleList != null) {
+      map['style_list'] = styleList!;
+    }
+
+    return map;
   }
 
   @override

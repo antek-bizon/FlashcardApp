@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flashcards/data/models/flashcard.dart';
+import 'package:flashcards/presentation/widgets/rich_text_editor/src/spannable_list.dart';
 import 'package:form_builder_image_picker/form_builder_image_picker.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:http/http.dart' as http;
@@ -89,14 +89,19 @@ class DatabaseRepository {
         final imageUri = (imageFilename.isNotEmpty)
             ? _pb.files.getUrl(e, imageFilename)
             : null;
-        final textStyle = jsonEncode(e.getListValue<String>("text_style"));
+        final styleListData = e.getListValue("style_list");
+        final styleList =
+            (styleListData.isNotEmpty && styleListData.first != null)
+                ? SpannableList.fromRanges(
+                    styleListData.cast<List>(), answer.length)
+                : null;
 
         return FlashcardModel(
             question: question,
             answer: answer,
             id: id,
             imageUri: (imageUri != null) ? imageUri.toString() : null,
-            textStyle: textStyle);
+            styleList: styleList);
       }).toList();
     } on ClientException catch (err) {
       throw err.response["message"].toString();
@@ -113,6 +118,7 @@ class DatabaseRepository {
         "question": item.question,
         "answer": item.answer,
         "flashcard_group": groupId,
+        "style_list": item.styleList?.toJson()
       };
 
       final files = await _getFileToUpload(image);
@@ -150,18 +156,21 @@ class DatabaseRepository {
     }
   }
 
-  Future<void> updateFlashcard(FlashcardModel item) async {
+  Future<void> updateFlashcard(FlashcardModel item, String? groupId) async {
     try {
       final id = item.id;
       if (id == null) {
-        throw "Cannot update flashcard. Id is null";
+        item.id = await addFlashcard(groupId, item, null);
+        return;
       }
 
       final body = {
         "question": item.question,
         "answer": item.answer,
-        "text_style": item.textStyle
+        "style_list": item.styleList?.toJson()
       };
+
+      //if (item.styleList != null)
 
       await _pb.collection("flashcards").update(id, body: body);
     } on ClientException catch (err) {

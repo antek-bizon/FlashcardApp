@@ -33,8 +33,8 @@ class _FlashcardListItemState extends State<FlashcardListItem> {
   @override
   void initState() {
     _questionField = TextEditingController(text: widget.flashcard.question);
-    _answerField = SpannableTextEditingController.fromJson(
-        text: widget.flashcard.answer, styleJson: widget.flashcard.textStyle);
+    _answerField = SpannableTextEditingController(
+        text: widget.flashcard.answer, styleList: widget.flashcard.styleList);
     super.initState();
   }
 
@@ -53,7 +53,7 @@ class _FlashcardListItemState extends State<FlashcardListItem> {
     setState(() {
       widget.flashcard.question = _questionField.text;
       widget.flashcard.answer = _answerField.text;
-      widget.flashcard.textStyle = _answerField.styleList.toJson();
+      widget.flashcard.styleList = _answerField.styleList;
     });
 
     widget.onUpdate();
@@ -70,7 +70,7 @@ class _FlashcardListItemState extends State<FlashcardListItem> {
             Row(
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(10.0),
                   child:
                       CircleAvatar(child: Text((widget.index + 1).toString())),
                 ),
@@ -81,11 +81,11 @@ class _FlashcardListItemState extends State<FlashcardListItem> {
                         vertical: 8.0, horizontal: 1.0),
                     child: Form(
                       key: _formKey,
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 2.0),
-                            child: TextFormField(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 5.0),
+                        child: Column(
+                          children: [
+                            TextFormField(
                               controller: _questionField,
                               enabled: editable,
                               maxLines: 5,
@@ -103,35 +103,35 @@ class _FlashcardListItemState extends State<FlashcardListItem> {
                                 return null;
                               },
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 2.0),
-                            child: TextFormField(
-                              controller: _answerField,
-                              enabled: editable,
-                              maxLines: 5,
-                              minLines: 1,
-                              keyboardType: TextInputType.multiline,
-                              decoration: const InputDecoration(
-                                hintText: "Answer",
-                                contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 5, vertical: 10),
-                              ),
-                              validator: (String? value) {
-                                if (value == null || value.isEmpty) {
-                                  return "Please enter some answer";
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          if (editable)
                             Padding(
                               padding:
-                                  const EdgeInsets.only(bottom: 3.0, top: 5.0),
-                              child: StyleToolbar(controller: _answerField),
+                                  const EdgeInsets.symmetric(vertical: 2.0),
+                              child: TextFormField(
+                                controller: _answerField,
+                                enabled: editable,
+                                maxLines: 5,
+                                minLines: 1,
+                                keyboardType: TextInputType.multiline,
+                                decoration: const InputDecoration(
+                                  hintText: "Answer",
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 10),
+                                ),
+                                validator: (String? value) {
+                                  if (value == null || value.isEmpty) {
+                                    return "Please enter some answer";
+                                  }
+                                  return null;
+                                },
+                              ),
                             ),
-                        ],
+                            if (editable)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 5.0),
+                                child: StyleToolbar(controller: _answerField),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

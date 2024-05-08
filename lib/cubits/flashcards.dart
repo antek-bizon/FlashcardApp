@@ -51,11 +51,9 @@ class CardCubit extends Cubit<CardState> {
       {required AuthState authState,
       required String groupName,
       String? groupId,
-      required String question,
-      required String answer,
+      required FlashcardModel item,
       XFileImage? image}) {
     _try(() async {
-      final item = FlashcardModel(question: question, answer: answer);
       final id = (isAuth(authState) && groupId != null)
           ? await _dbr.addFlashcard(groupId, item, image)
           : null;
@@ -82,11 +80,12 @@ class CardCubit extends Cubit<CardState> {
   }
 
   void updateFlashcard(
-      AuthState authState, String groupName, int index, bool hasGroupId) {
+      AuthState authState, String groupName, int index, String? groupId) {
     _try(() async {
       final item = _cards.elementAt(index);
       final futures = [
-        if (isAuth(authState) && hasGroupId) _dbr.updateFlashcard(item),
+        if (isAuth(authState) && groupId != null)
+          _dbr.updateFlashcard(item, groupId),
         _lsr.updateJson(groupName, _cards)
       ];
 

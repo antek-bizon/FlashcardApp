@@ -7,6 +7,7 @@ import 'package:flashcards/presentation/presentation_page.dart';
 import 'package:flashcards/presentation/widgets/flashcard_list_item.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/presentation/widgets/default_body.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -61,15 +62,12 @@ class _GroupPageState extends State<GroupPage> {
           BlocBuilder<CardCubit, CardState>(builder: (context, state) {
         if (state is SuccessCardState) {
           return AddFlashcardDialog(
-            onAdd: (question, answer, image) => context
-                .read<CardCubit>()
-                .addFlashcard(
-                    authState: authState(context),
-                    groupName: widget.groupName,
-                    groupId: widget.groupId,
-                    question: question,
-                    answer: answer,
-                    image: image),
+            onAdd: (item, image) => context.read<CardCubit>().addFlashcard(
+                authState: authState(context),
+                groupName: widget.groupName,
+                groupId: widget.groupId,
+                item: item,
+                image: image),
             existingFlashcards: state.flashcards,
           );
         } else {
@@ -210,11 +208,14 @@ class _GroupPageState extends State<GroupPage> {
                       onDelete: () => cubit.removeFlashcard(authState(context),
                           widget.groupName, index, widget.groupId != null),
                       onUpdate: () => cubit.updateFlashcard(authState(context),
-                          widget.groupName, index, widget.groupId != null),
+                          widget.groupName, index, widget.groupId),
                     );
                   }),
             );
           } else if (state is ErrorCardState) {
+            if (kDebugMode) {
+              print("Error in group page: ${state.message}");
+            }
             return const Center(
               child: Text("Error has occured. Please try again."),
             );

@@ -225,10 +225,11 @@ class _ExamPageState extends State<ExamPage> {
                   addSpacing(height: 25),
                   Expanded(
                     child: FlashcardDraft(
-                      question: e.question,
-                      answer: e.answer,
-                      imageUri: e.imageUri,
-                      textStyle: e.textStyle,
+                      item: e,
+                      // question: e.question,
+                      // answer: e.answer,
+                      // imageUri: e.imageUri,
+                      // textStyle: e.styleList,
                       showFront: e.state == ExamItemState.none,
                       backColor: e.state == ExamItemState.wrong
                           ? const Color.fromARGB(255, 255, 4, 0)
