@@ -1,16 +1,19 @@
-# flashcards
+# Flashcards
 
-A new Flutter project.
+Flashcards is a simple flashcard app built with Flutter. 
 
-## Getting Started
+## Features
+- Create and manage groups of flashcards
+- Add, edit and delete flashcards
+- Examine flashcards in a presentation mode
+- Share groups of flashcards
 
-This project is a starting point for a Flutter application.
+## Building
+- Clone the repository
+- Open a terminal
+- Run `flutter pub get` to fetch the dependencies
+- Run `flutter run` to start the app on a connected device or emulator
 
-A few resources to get you started if this is your first Flutter project:
+## License
+Flashcards is licensed under the [MIT License](LICENSE).
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
