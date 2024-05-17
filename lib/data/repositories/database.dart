@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flashcards/data/models/flashcard.dart';
-import 'package:flashcards/presentation/widgets/rich_text_editor/src/spannable_list.dart';
+import 'package:flashcards/presentation/widgets/colorful_textfield/colorful_text_editing_controller.dart';
 import 'package:form_builder_image_picker/form_builder_image_picker.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:http/http.dart' as http;
@@ -60,9 +60,9 @@ class DatabaseRepository {
     }
   }
 
-  Future<void> removeFlashcardGroup(String? id) async {
+  Future<void> removeFlashcardGroup(String id) async {
     try {
-      if (id == null) {
+      if (id.trim().isEmpty) {
         throw "Failed to remove group from server. Id was a null";
       }
       await _pb.collection("flashcard_groups").delete(id);
@@ -71,9 +71,9 @@ class DatabaseRepository {
     }
   }
 
-  Future<List<FlashcardModel>> getFlashcards(String? groupId) async {
+  Future<List<FlashcardModel>> getFlashcards(String groupId) async {
     try {
-      if (groupId == null) {
+      if (groupId.trim().isEmpty) {
         throw "Cannot get flashcards from server. Group id is null.";
       }
 
@@ -90,18 +90,17 @@ class DatabaseRepository {
             ? _pb.files.getUrl(e, imageFilename)
             : null;
         final styleListData = e.getListValue("style_list");
-        final styleList =
-            (styleListData.isNotEmpty && styleListData.first != null)
-                ? SpannableList.fromRanges(
-                    styleListData.cast<List>(), answer.length)
-                : null;
+        final styleList = (styleListData.isNotEmpty &&
+                styleListData.first != null)
+            ? StylesList.fromRanges(styleListData.cast<List>(), answer.length)
+            : null;
 
         return FlashcardModel(
             question: question,
             answer: answer,
             id: id,
             imageUri: (imageUri != null) ? imageUri.toString() : null,
-            styleList: styleList);
+            styles: styleList);
       }).toList();
     } on ClientException catch (err) {
       throw err.response["message"].toString();
@@ -109,16 +108,16 @@ class DatabaseRepository {
   }
 
   Future<String> addFlashcard(
-      String? groupId, FlashcardModel item, XFileImage? image) async {
+      String groupId, FlashcardModel item, XFileImage? image) async {
     try {
-      if (groupId == null) {
+      if (groupId.trim().isEmpty) {
         throw "Cannot add flashcard. Group Id is null";
       }
       final body = {
         "question": item.question,
         "answer": item.answer,
         "flashcard_group": groupId,
-        "style_list": item.styleList?.toJson()
+        "style_list": item.styles?.toJson()
       };
 
       final files = await _getFileToUpload(image);
@@ -156,7 +155,7 @@ class DatabaseRepository {
     }
   }
 
-  Future<void> updateFlashcard(FlashcardModel item, String? groupId) async {
+  Future<void> updateFlashcard(FlashcardModel item, String groupId) async {
     try {
       final id = item.id;
       if (id == null) {
@@ -167,7 +166,7 @@ class DatabaseRepository {
       final body = {
         "question": item.question,
         "answer": item.answer,
-        "style_list": item.styleList?.toJson()
+        "style_list": item.styles?.toJson()
       };
 
       //if (item.styleList != null)

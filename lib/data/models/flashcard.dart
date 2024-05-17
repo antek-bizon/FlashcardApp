@@ -1,18 +1,18 @@
-import 'package:flashcards/presentation/widgets/rich_text_editor/src/spannable_list.dart';
+import 'package:flashcards/presentation/widgets/colorful_textfield/colorful_text_editing_controller.dart';
 
 class FlashcardModel {
   String question;
   String answer;
   String? imageUri;
   String? id;
-  SpannableList? styleList;
+  StylesList? styles;
 
   FlashcardModel(
       {required this.question,
       required this.answer,
       this.imageUri,
       this.id,
-      this.styleList});
+      this.styles});
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> map = {
@@ -28,8 +28,8 @@ class FlashcardModel {
       map['id'] = id!;
     }
 
-    if (styleList != null) {
-      map['style_list'] = styleList!;
+    if (styles != null) {
+      map['style_list'] = styles!;
     }
 
     return map;

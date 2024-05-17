@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flashcards/data/models/flashcard.dart';
-import 'package:flashcards/presentation/widgets/rich_text_editor/src/spannable_list.dart';
+import 'package:flashcards/presentation/widgets/colorful_textfield/colorful_text_editing_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalStorageRepository {
@@ -76,15 +76,15 @@ class LocalStorageRepository {
       final imageUri = e["image"];
       final styleListString = e["style_list"];
       final styleList = (styleListString != null)
-          ? SpannableList.fromRanges(
+          ? StylesList.fromRanges(
               (styleListString as List).cast<List>(), answer.length)
-          : SpannableList.generate(answer.length);
+          : StylesList.generate(answer.length);
 
       flashcards.add(FlashcardModel(
           question: question,
           answer: answer,
           imageUri: imageUri,
-          styleList: styleList));
+          styles: styleList));
     }
 
     return flashcards;

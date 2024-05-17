@@ -1,8 +1,9 @@
 import 'dart:math';
 
 import 'package:flashcards/data/models/flashcard.dart';
-import 'package:flashcards/presentation/widgets/rich_text_editor/src/spannable_text.dart';
-import 'package:flashcards/presentation/widgets/rich_text_editor/src/style_toolbar.dart';
+import 'package:flashcards/presentation/widgets/colorful_textfield/colorful_text_editing_controller.dart';
+import 'package:flashcards/presentation/widgets/colorful_textfield/text_field_toolbar.dart';
+import 'package:flashcards/presentation/widgets/multi_line_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:form_builder_image_picker/form_builder_image_picker.dart';
 
@@ -107,7 +108,7 @@ class AddFlashcardDialog extends StatefulWidget {
 class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final _questionField = TextEditingController();
-  final _answerField = SpannableTextEditingController.empty();
+  final _answerField = ColorfulTextEditingController();
   XFileImage? _img;
   bool isError = false;
 
@@ -147,20 +148,10 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
                     key: _formKey,
                     child: Column(
                       children: [
-                        TextFormField(
+                        MultiLineTextField(
                           controller: _questionField,
-                          maxLines: 5,
-                          minLines: 1,
-                          keyboardType: TextInputType.multiline,
-                          decoration: const InputDecoration(
-                              hintText: "Question",
-                              contentPadding: EdgeInsets.only(left: 5)),
-                          validator: (String? value) {
-                            if (value == null || value.isEmpty) {
-                              return "Please enter some question";
-                            }
-                            return null;
-                          },
+                          hintText: "Question",
+                          validatorText: "Please enter a question",
                           onChanged: (_) {
                             if (isError) {
                               setState(() {
@@ -169,21 +160,10 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
                             }
                           },
                         ),
-                        TextFormField(
+                        MultiLineTextField(
                           controller: _answerField,
-                          maxLines: 5,
-                          minLines: 1,
-                          keyboardType: TextInputType.multiline,
-                          decoration: const InputDecoration(
-                              hintText: "Answer",
-                              contentPadding: EdgeInsets.only(left: 5)),
-                          validator: (String? value) {
-                            if (value == null || value.isEmpty) {
-                              return "Please enter some answer";
-                            }
-
-                            return null;
-                          },
+                          hintText: "Answer",
+                          validatorText: "Please enter an answer",
                           onChanged: (_) {
                             if (isError) {
                               setState(() {
@@ -192,7 +172,7 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
                             }
                           },
                         ),
-                        StyleToolbar(controller: _answerField),
+                        TextFieldToolbar(controller: _answerField),
                         FormBuilderImagePicker(
                           transformImageWidget: (context, displayImage) => Card(
                               // shape: const CircleBorder(),
@@ -230,7 +210,7 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
                                 isError = true;
                               });
                             } else {
-                              item.styleList = _answerField.styleList;
+                              item.styles = _answerField.styles;
                               widget.onAdd(item, _img);
                               Navigator.pop(context);
                             }

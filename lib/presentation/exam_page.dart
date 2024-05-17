@@ -129,41 +129,53 @@ class _ExamPageState extends State<ExamPage> {
     } else {
       showDialog(
           context: context,
-          builder: (context) => Dialog(
-                child: Padding(
-                  padding: const EdgeInsets.all(25.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          "Test finished",
-                          style: Theme.of(context).textTheme.headlineLarge,
+          builder: (context) {
+            final width = MediaQuery.of(context).size.width;
+            final height = MediaQuery.of(context).size.height;
+
+            return Dialog(
+              insetPadding: EdgeInsets.symmetric(
+                  vertical: log(height) * 10 - 15,
+                  horizontal: log(width) * 10 - 15),
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            "Test finished",
+                            style: Theme.of(context).textTheme.headlineLarge,
+                          ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          "Your score: $score",
-                          style: Theme.of(context).textTheme.bodyLarge,
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            "Your score: $score",
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
                         ),
-                      ),
-                      if (_wrongAnswers.isNotEmpty) _wrongAnswersList(),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              Navigator.pop(context);
-                            },
-                            child: const Text("Return")),
-                      )
-                    ],
-                  ),
+                        if (_wrongAnswers.isNotEmpty) _wrongAnswersList(),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                Navigator.pop(context);
+                              },
+                              child: const Text("Return")),
+                        )
+                      ],
+                    ),
+                  ],
                 ),
-              ));
+              ),
+            );
+          });
     }
   }
 
@@ -171,7 +183,6 @@ class _ExamPageState extends State<ExamPage> {
     return (!answered)
         ? IconButton(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            // color: Theme.of(context).colorScheme.onPrimary,
             onPressed: _checkAnswer,
             icon: const Icon(Icons.check))
         : IconButton(
@@ -188,11 +199,8 @@ class _ExamPageState extends State<ExamPage> {
       appBar: AppBar(
         title: Text(
           "Score: $score",
-          // style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
         ),
         centerTitle: true,
-        // iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onPrimary),
-        // backgroundColor: Theme.of(context).colorScheme.primary,
       ),
       body: DefaultBody(
         child: PageView(
@@ -232,7 +240,7 @@ class _ExamPageState extends State<ExamPage> {
                       // textStyle: e.styleList,
                       showFront: e.state == ExamItemState.none,
                       backColor: e.state == ExamItemState.wrong
-                          ? const Color.fromARGB(255, 255, 4, 0)
+                          ? Colors.red
                           : Colors.lightGreen,
                     ),
                   ),

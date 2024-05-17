@@ -58,7 +58,7 @@ class GroupCubit extends Cubit<GroupState> {
   void removeGroup(final AuthState authState, String name, String? id) {
     _try(() async {
       final futures = [
-        if (isAuth(authState)) _dbr.removeFlashcardGroup(id),
+        if (isAuth(authState) && id != null) _dbr.removeFlashcardGroup(id),
         _lsr.removeGroup(name)
       ];
       await Future.wait(futures);

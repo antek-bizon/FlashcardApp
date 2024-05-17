@@ -1,22 +1,14 @@
 import 'package:flashcards/data/models/flashcard.dart';
-import 'package:flashcards/presentation/widgets/rich_text_editor/src/spannable_list.dart';
+import 'package:flashcards/presentation/widgets/colorful_textfield/colorful_text_editing_controller.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flutter/material.dart';
 
 class FlashcardWidget extends StatefulWidget {
-  // final String question;
-  // final String answer;
-  // final String? imageUri;
-  // final String? textStyle;
   final FlashcardModel item;
 
   const FlashcardWidget({
     super.key,
     required this.item,
-    // required this.question,
-    // required this.answer,
-    // this.imageUri,
-    // this.textStyle
   });
 
   @override
@@ -37,10 +29,6 @@ class _FlashcardWidgetState extends State<FlashcardWidget> {
     return GestureDetector(
       onTap: _toggleCard,
       child: FlashcardDraft(
-        // question: widget.item.question,
-        // answer: widget.item.answer,
-        // imageUri: widget.item.imageUri,
-        // textStyle: widget.item.textStyle,
         item: widget.item,
         showFront: _showFront,
       ),
@@ -57,7 +45,7 @@ class FlashcardDraft extends StatelessWidget {
       // this.imageUri,
       // this.textStyle,
       required this.showFront,
-      this.backColor = Colors.lightGreen});
+      this.backColor = Colors.teal});
   // final String question;
   // final String answer;
   // final String? imageUri;
@@ -68,8 +56,9 @@ class FlashcardDraft extends StatelessWidget {
 
   Color _sideColor(BuildContext context) {
     return Color.lerp((showFront) ? Colors.blueAccent : backColor,
-            Theme.of(context).colorScheme.secondaryContainer, 0.35) ??
-        Colors.orangeAccent;
+                Theme.of(context).colorScheme.secondaryContainer, 0.65)
+            ?.withAlpha(170) ??
+        Colors.orangeAccent.withAlpha(150);
   }
 
   String _sideTitle() {
@@ -79,7 +68,8 @@ class FlashcardDraft extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final image = getImage(item.imageUri);
-    final list = item.styleList ?? SpannableList.generate(item.answer.length);
+    final list = item.styles ?? StylesList.generate(item.answer.length);
+    final theme = Theme.of(context);
 
     return Card(
       elevation: 5.0,
@@ -108,11 +98,17 @@ class FlashcardDraft extends StatelessWidget {
                 child: showFront
                     ? Text(
                         item.question,
-                        style: const TextStyle(fontSize: 20.0),
+                        style: const TextStyle(
+                          fontSize: 20.0,
+                        ),
                       )
                     : RichText(
-                        text: list.toTextSpan(item.answer,
-                            defaultStyle: const TextStyle(fontSize: 20.0))),
+                        text: list.toTextSpan(context, item.answer,
+                            style: TextStyle(
+                                fontSize: 20.0,
+                                fontFamily:
+                                    theme.textTheme.bodyMedium?.fontFamily,
+                                color: theme.colorScheme.onSurface))),
               ),
             ),
           ),

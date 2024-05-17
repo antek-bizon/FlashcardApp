@@ -67,11 +67,11 @@ class AppView extends StatelessWidget {
         theme: ThemeData(
             colorScheme: lightScheme,
             useMaterial3: true,
-            textTheme: GoogleFonts.mulishTextTheme()),
+            textTheme: GoogleFonts.poppinsTextTheme()),
         darkTheme: ThemeData(
             colorScheme: darkScheme,
             useMaterial3: true,
-            textTheme: GoogleFonts.mulishTextTheme(
+            textTheme: GoogleFonts.poppinsTextTheme(
                 const TextTheme(titleMedium: TextStyle(color: Colors.white)))),
         themeMode: state.mode,
         home: BlocBuilder<AuthCubit, AuthState>(

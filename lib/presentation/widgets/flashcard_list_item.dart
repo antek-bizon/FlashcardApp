@@ -1,7 +1,8 @@
 import 'package:flashcards/data/models/flashcard.dart';
+import 'package:flashcards/presentation/widgets/colorful_textfield/colorful_text_editing_controller.dart';
+import 'package:flashcards/presentation/widgets/colorful_textfield/text_field_toolbar.dart';
 import 'package:flashcards/presentation/widgets/dropdown_image.dart';
-import 'package:flashcards/presentation/widgets/rich_text_editor/src/spannable_text.dart';
-import 'package:flashcards/presentation/widgets/rich_text_editor/src/style_toolbar.dart';
+import 'package:flashcards/presentation/widgets/multi_line_text_field.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flutter/material.dart';
 
@@ -28,13 +29,13 @@ class _FlashcardListItemState extends State<FlashcardListItem> {
   bool editable = false;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late TextEditingController _questionField;
-  late SpannableTextEditingController _answerField;
+  late ColorfulTextEditingController _answerField;
 
   @override
   void initState() {
     _questionField = TextEditingController(text: widget.flashcard.question);
-    _answerField = SpannableTextEditingController(
-        text: widget.flashcard.answer, styleList: widget.flashcard.styleList);
+    _answerField = ColorfulTextEditingController(
+        text: widget.flashcard.answer, styles: widget.flashcard.styles);
     super.initState();
   }
 
@@ -53,7 +54,7 @@ class _FlashcardListItemState extends State<FlashcardListItem> {
     setState(() {
       widget.flashcard.question = _questionField.text;
       widget.flashcard.answer = _answerField.text;
-      widget.flashcard.styleList = _answerField.styleList;
+      widget.flashcard.styles = _answerField.styles;
     });
 
     widget.onUpdate();
@@ -85,50 +86,25 @@ class _FlashcardListItemState extends State<FlashcardListItem> {
                         padding: const EdgeInsets.only(bottom: 5.0),
                         child: Column(
                           children: [
-                            TextFormField(
-                              controller: _questionField,
-                              enabled: editable,
-                              maxLines: 5,
-                              minLines: 1,
-                              keyboardType: TextInputType.multiline,
-                              decoration: const InputDecoration(
+                            MultiLineTextField(
+                                controller: _questionField,
+                                enabled: editable,
                                 hintText: "Question",
-                                contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 5, vertical: 10),
-                              ),
-                              validator: (String? value) {
-                                if (value == null || value.isEmpty) {
-                                  return "Please enter some question";
-                                }
-                                return null;
-                              },
-                            ),
+                                validatorText: "Please enter a question"),
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(vertical: 2.0),
-                              child: TextFormField(
-                                controller: _answerField,
-                                enabled: editable,
-                                maxLines: 5,
-                                minLines: 1,
-                                keyboardType: TextInputType.multiline,
-                                decoration: const InputDecoration(
+                              child: MultiLineTextField(
                                   hintText: "Answer",
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 5, vertical: 10),
-                                ),
-                                validator: (String? value) {
-                                  if (value == null || value.isEmpty) {
-                                    return "Please enter some answer";
-                                  }
-                                  return null;
-                                },
-                              ),
+                                  validatorText: "Please enter an answer",
+                                  controller: _answerField,
+                                  enabled: editable),
                             ),
                             if (editable)
                               Padding(
                                 padding: const EdgeInsets.only(top: 5.0),
-                                child: StyleToolbar(controller: _answerField),
+                                child:
+                                    TextFieldToolbar(controller: _answerField),
                               ),
                           ],
                         ),
