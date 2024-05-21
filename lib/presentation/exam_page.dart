@@ -105,13 +105,15 @@ class _ExamPageState extends State<ExamPage> {
         child: SizedBox(
           width: 300,
           height: min(_wrongAnswers.length * 30, 150),
-          child: ListView.builder(
+          child: ListView.separated(
             itemCount: _wrongAnswers.length,
+            separatorBuilder: (context, index) => const Divider(),
             itemBuilder: (context, index) {
               final data = _wrongAnswers[index];
-              return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [Text(data.answer), Text(data.userAnswer)]);
+              return Row(children: [
+                _AnswerListItem(data.answer),
+                _AnswerListItem(data.userAnswer)
+              ]);
             },
           ),
         ),
@@ -127,56 +129,35 @@ class _ExamPageState extends State<ExamPage> {
       _controller.nextPage(
           duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
     } else {
-      showDialog(
-          context: context,
-          builder: (context) {
-            final width = MediaQuery.of(context).size.width;
-            final height = MediaQuery.of(context).size.height;
-
-            return Dialog(
-              insetPadding: EdgeInsets.symmetric(
-                  vertical: log(height) * 10 - 15,
-                  horizontal: log(width) * 10 - 15),
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            "Test finished",
-                            style: Theme.of(context).textTheme.headlineLarge,
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            "Your score: $score",
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                        ),
-                        if (_wrongAnswers.isNotEmpty) _wrongAnswersList(),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                                Navigator.pop(context);
-                              },
-                              child: const Text("Return")),
-                        )
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          });
+      showDialog(context: context, builder: _dialog, barrierDismissible: false);
     }
+  }
+
+  Widget _dialog(context) {
+    return AlertDialog(
+      title: const Center(child: Text("Test finished")),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            "Your score: $score",
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          if (_wrongAnswers.isNotEmpty) _wrongAnswersList(),
+        ],
+      ),
+      actions: [
+        Center(
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text("Return"),
+          ),
+        )
+      ],
+    );
   }
 
   IconButton _bottomButton() {
@@ -255,6 +236,25 @@ class _ExamPageState extends State<ExamPage> {
         child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [_bottomButton()]),
+      ),
+    );
+  }
+}
+
+class _AnswerListItem extends StatelessWidget {
+  const _AnswerListItem(
+    this.text,
+  );
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        softWrap: true,
       ),
     );
   }

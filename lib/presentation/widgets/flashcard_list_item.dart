@@ -63,6 +63,7 @@ class _FlashcardListItemState extends State<FlashcardListItem> {
   @override
   Widget build(BuildContext context) {
     final image = getImage(widget.flashcard.imageUri);
+    _answerField.setDefaultColor(Theme.of(context).colorScheme.onSurface);
 
     return Card(
         margin: const EdgeInsets.symmetric(vertical: 10.0),

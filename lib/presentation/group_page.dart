@@ -16,6 +16,8 @@ enum MenuItem {
   deleteGroup
 }
 
+enum PresentationButtonOptions { none, shuffle }
+
 class GroupPage extends StatefulWidget {
   final String groupName;
   final String? groupId;
@@ -248,15 +250,30 @@ class _GroupPageState extends State<GroupPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  IconButton(
-                    tooltip: "Learn",
-                    onPressed: (flashcards.isNotEmpty)
-                        ? () => _showPresentationPage(context, flashcards)
-                        : null,
+                  PopupMenuButton(
+                    enabled: flashcards.isNotEmpty,
+                    onSelected: (value) {
+                      final list = List.generate(flashcards.length,
+                          (index) => FlashcardModel.copy(flashcards[index]));
+                      if (value == PresentationButtonOptions.shuffle) {
+                        list.shuffle();
+                      }
+                      _showPresentationPage(context, list);
+                    },
                     icon: const Icon(
                       Icons.present_to_all,
-                      // color: Theme.of(context).colorScheme.onPrimary,
                     ),
+                    itemBuilder: (context) =>
+                        <PopupMenuEntry<PresentationButtonOptions>>[
+                      const PopupMenuItem<PresentationButtonOptions>(
+                        value: PresentationButtonOptions.none,
+                        child: Text("Original order"),
+                      ),
+                      const PopupMenuItem<PresentationButtonOptions>(
+                        value: PresentationButtonOptions.shuffle,
+                        child: Text("Random order"),
+                      ),
+                    ],
                   ),
                   addSpacing(width: 30),
                   IconButton(

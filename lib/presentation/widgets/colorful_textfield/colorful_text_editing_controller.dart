@@ -319,6 +319,10 @@ class ColorfulTextEditingController extends TextEditingController {
   void resetColor() {
     currentColorIndex = 0;
   }
+
+  void setDefaultColor(Color color) {
+    colors[0] = color;
+  }
 }
 
 class _StyleFragment {

@@ -17,6 +17,8 @@ class PresentationPage extends StatefulWidget {
 
 class _PresentationPageState extends State<PresentationPage> {
   final PageController _controller = PageController(initialPage: 0);
+  final List<FlashcardModel> _incorrectAnswers = [];
+  bool _animation = false;
 
   @override
   void dispose() {
@@ -24,23 +26,89 @@ class _PresentationPageState extends State<PresentationPage> {
     super.dispose();
   }
 
-  void _previousPage() {
-    _controller.previousPage(
-        duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+  void _nextPage() {
+    if (_controller.page!.toInt() < widget.flashcards.length - 1) {
+      _animation = true;
+      _controller
+          .nextPage(
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInOut)
+          .then((_) => _animation = false);
+    } else if (_incorrectAnswers.isNotEmpty) {
+      showDialog(
+          context: context,
+          builder: _continueDialog,
+          barrierDismissible: false);
+    } else {
+      showDialog(
+        context: context,
+        builder: _endDialog,
+        barrierDismissible: false,
+      );
+    }
   }
 
-  void _nextPage() {
-    _controller.nextPage(
-        duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+  Widget _continueDialog(BuildContext context) {
+    return AlertDialog(
+      title: Text('${_incorrectAnswers.length} incorrect answers'),
+      content: const Text('Do you want to continue studying them?'),
+      actions: <Widget>[
+        TextButton(
+          child: const Text('Continue'),
+          onPressed: () {
+            final list = _incorrectAnswers;
+            list.shuffle();
+            Navigator.pop(context);
+            Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => PresentationPage(flashcards: list)));
+          },
+        ),
+        TextButton(
+          child: const Text('Leave'),
+          onPressed: () {
+            Navigator.pop(context);
+            Navigator.pop(context);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _endDialog(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Congratulations!'),
+      content: const Text('You answered everything correctly!'),
+      actions: <Widget>[
+        TextButton(
+          child: const Text('OK'),
+          onPressed: () {
+            Navigator.pop(context);
+            Navigator.pop(context);
+          },
+        ),
+      ],
+    );
+  }
+
+  void _correct() {
+    if (!_animation) {
+      _nextPage();
+    }
+  }
+
+  void _incorrect() {
+    if (!_animation) {
+      _incorrectAnswers.add(widget.flashcards[_controller.page!.toInt()]);
+      _nextPage();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-          // iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onPrimary),
-          // backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
+      appBar: AppBar(),
       body: DefaultBody(
         child: PageView(
           controller: _controller,
@@ -58,13 +126,13 @@ class _PresentationPageState extends State<PresentationPage> {
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           IconButton(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              onPressed: _previousPage,
-              icon: const Icon(Icons.arrow_back_ios_rounded)),
+              onPressed: _incorrect,
+              icon: const Icon(Icons.close_rounded)),
           addSpacing(width: min(MediaQuery.of(context).size.width * 0.2, 100)),
           IconButton(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              onPressed: _nextPage,
-              icon: const Icon(Icons.arrow_forward_ios_rounded))
+              onPressed: _correct,
+              icon: const Icon(Icons.check_rounded))
         ]),
       ),
     );

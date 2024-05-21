@@ -14,6 +14,15 @@ class FlashcardModel {
       this.id,
       this.styles});
 
+  factory FlashcardModel.copy(FlashcardModel model) {
+    return FlashcardModel(
+        question: model.question,
+        answer: model.answer,
+        imageUri: model.imageUri,
+        id: model.id,
+        styles: model.styles);
+  }
+
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> map = {
       'question': question,
