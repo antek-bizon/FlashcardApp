@@ -1,6 +1,7 @@
 import 'dart:math';
 
-import 'package:flashcards/data/models/flashcard.dart';
+import 'package:flashcards/data/models/classic_flashcard.dart';
+import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:flashcards/presentation/widgets/flashcard_widget.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/presentation/widgets/default_body.dart';
@@ -8,18 +9,18 @@ import 'package:flutter/material.dart';
 
 enum ExamItemState { none, correct, wrong }
 
-class ExamItem extends FlashcardModel {
+class ExamItem extends ClassicFlashcard {
   ExamItemState state = ExamItemState.none;
-  ExamItem({required FlashcardModel flashcard})
+  ExamItem({required ClassicFlashcard flashcard, String? imageUri})
       : super(
-            question: flashcard.question,
-            answer: flashcard.answer,
-            imageUri: flashcard.imageUri);
+          question: flashcard.question,
+          answer: flashcard.answer,
+        );
 }
 
-class WrongAnswer extends FlashcardModel {
+class WrongAnswer extends ClassicFlashcard {
   final String userAnswer;
-  WrongAnswer({required FlashcardModel flashcard, required this.userAnswer})
+  WrongAnswer({required ClassicFlashcard flashcard, required this.userAnswer})
       : super(question: flashcard.question, answer: flashcard.answer);
 }
 
@@ -27,9 +28,10 @@ class WrongAnswer extends FlashcardModel {
 class ExamPage extends StatefulWidget {
   final List<ExamItem> examItems;
 
-  ExamPage({super.key, required List<FlashcardModel> flashcards})
-      : examItems = flashcards
-            .map((e) => ExamItem(flashcard: e))
+  ExamPage({super.key, required List<QuizItem> items})
+      : examItems = items
+            .where((e) => e.data is ClassicFlashcard)
+            .map((e) => ExamItem(flashcard: e.data as ClassicFlashcard))
             .toList(growable: false)
           ..shuffle();
 

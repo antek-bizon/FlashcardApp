@@ -1,110 +1,110 @@
 import 'package:flashcards/cubits/auth.dart';
-import 'package:flashcards/data/models/flashcard.dart';
+import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:flashcards/data/repositories/database.dart';
 import 'package:flashcards/data/repositories/localstorage.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:form_builder_image_picker/form_builder_image_picker.dart';
 
-abstract class CardState {}
+abstract class QuizItemState {}
 
-class InitCardState extends CardState {}
+class InitItemState extends QuizItemState {}
 
-class LoadingCardState extends CardState {}
+class LoadingItemState extends QuizItemState {}
 
-class ErrorCardState extends CardState {
+class ErrorItemState extends QuizItemState {
   final String message;
-  ErrorCardState(this.message);
+  ErrorItemState(this.message);
 }
 
-class SuccessCardState extends CardState {
-  final List<FlashcardModel> flashcards;
-  SuccessCardState(this.flashcards);
+class SuccessItemState extends QuizItemState {
+  final List<QuizItem> flashcards;
+  SuccessItemState(this.flashcards);
 }
 
-class CardCubit extends Cubit<CardState> {
+class QuizItemCubit extends Cubit<QuizItemState> {
   final DatabaseRepository _dbr;
   final LocalStorageRepository _lsr;
-  final List<FlashcardModel> _cards = [];
+  final List<QuizItem> _cards = [];
 
-  CardCubit(
+  QuizItemCubit(
       {required DatabaseRepository databaseRepository,
       required LocalStorageRepository localStorageRepository})
       : _dbr = databaseRepository,
         _lsr = localStorageRepository,
-        super(InitCardState());
+        super(InitItemState());
 
-  void getFlashcards(AuthState authState, String groupName, String? groupId) {
+  void getQuizItem(AuthState authState, String groupName, String? groupId) {
     _try(() async {
       final futures = [
-        if (isAuth(authState) && groupId != null) _dbr.getFlashcards(groupId),
-        _lsr.getFlashcards(groupName)
+        if (isAuth(authState) && groupId != null) _dbr.getQuizItem(groupId),
+        _lsr.getQuizItem(groupName)
       ];
       final results = await Future.wait(futures);
       _cards.clear();
       _cards.addAll(_removeCardsDuplicates(results));
-      emit(SuccessCardState(_cards));
+      emit(SuccessItemState(_cards));
     });
   }
 
-  void addFlashcard(
+  void addQuizItem(
       {required AuthState authState,
       required String groupName,
       String? groupId,
-      required FlashcardModel item,
+      required QuizItem item,
       XFileImage? image}) {
     _try(() async {
       final id = (isAuth(authState) && groupId != null)
-          ? await _dbr.addFlashcard(groupId, item, image)
+          ? await _dbr.addQuizItem(groupId, item, image)
           : null;
       item.id = id;
       item.imageUri = image?.file.path;
       _cards.add(item);
       await _lsr.updateJson(groupName, _cards);
-      emit(SuccessCardState(_cards));
+      emit(SuccessItemState(_cards));
     });
   }
 
-  void removeFlashcard(
+  void removeQuizItem(
       AuthState authState, String groupName, int index, bool hasGroupId) {
     _try(() async {
       final item = _cards.removeAt(index);
       final futures = [
-        if (isAuth(authState) && hasGroupId) _dbr.removeFlashcard(item),
+        if (isAuth(authState) && hasGroupId && item.id != null)
+          _dbr.removeQuizItem(item),
         _lsr.updateJson(groupName, _cards)
       ];
 
       await Future.wait(futures);
-      emit(SuccessCardState(_cards));
+      emit(SuccessItemState(_cards));
     });
   }
 
-  void updateFlashcard(
+  void updateQuizItem(
       AuthState authState, String groupName, int index, String? groupId) {
     _try(() async {
       final item = _cards.elementAt(index);
       final futures = [
         if (isAuth(authState) && groupId != null)
-          _dbr.updateFlashcard(item, groupId),
+          _dbr.updateQuizItem(item, groupId),
         _lsr.updateJson(groupName, _cards)
       ];
 
       await Future.wait(futures);
-      emit(SuccessCardState(_cards));
+      emit(SuccessItemState(_cards));
     });
   }
 
   void _try(Future<void> Function() fun) async {
-    emit(LoadingCardState());
+    emit(LoadingItemState());
     try {
       await fun();
     } catch (e) {
-      emit(ErrorCardState(e.toString()));
+      emit(ErrorItemState(e.toString()));
     }
   }
 
-  List<FlashcardModel> _removeCardsDuplicates(
-      final List<List<FlashcardModel>> cards) {
+  List<QuizItem> _removeCardsDuplicates(final List<List<QuizItem>> cards) {
     final cardsSet = cards.first.toSet();
     for (int i = 1; i < cards.length; i++) {
       for (var e in cards[i]) {

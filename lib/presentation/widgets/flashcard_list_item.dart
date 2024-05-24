@@ -1,4 +1,4 @@
-import 'package:flashcards/data/models/flashcard.dart';
+import 'package:flashcards/data/models/classic_flashcard.dart';
 import 'package:flashcards/presentation/widgets/colorful_textfield/colorful_text_editing_controller.dart';
 import 'package:flashcards/presentation/widgets/colorful_textfield/text_field_toolbar.dart';
 import 'package:flashcards/presentation/widgets/dropdown_image.dart';
@@ -12,11 +12,13 @@ class FlashcardListItem extends StatefulWidget {
       required this.index,
       required this.flashcard,
       required this.flashcardKey,
+      required this.imageUri,
       required this.onDelete,
       required this.onUpdate});
 
-  final FlashcardModel flashcard;
+  final ClassicFlashcard flashcard;
   final String flashcardKey;
+  final String? imageUri;
   final int index;
   final VoidCallback onDelete;
   final void Function() onUpdate;
@@ -62,7 +64,7 @@ class _FlashcardListItemState extends State<FlashcardListItem> {
 
   @override
   Widget build(BuildContext context) {
-    final image = getImage(widget.flashcard.imageUri);
+    final image = getImage(widget.imageUri);
     _answerField.setDefaultColor(Theme.of(context).colorScheme.onSurface);
 
     return Card(

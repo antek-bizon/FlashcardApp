@@ -1,6 +1,7 @@
 import 'dart:math';
 
-import 'package:flashcards/data/models/flashcard.dart';
+import 'package:flashcards/data/models/classic_flashcard.dart';
+import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:flashcards/presentation/widgets/flashcard_widget.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/presentation/widgets/default_body.dart';
@@ -9,7 +10,7 @@ import 'package:flutter/material.dart';
 class PresentationPage extends StatefulWidget {
   const PresentationPage({super.key, required this.flashcards});
 
-  final List<FlashcardModel> flashcards;
+  final List<QuizItem> flashcards;
 
   @override
   State<PresentationPage> createState() => _PresentationPageState();
@@ -17,7 +18,7 @@ class PresentationPage extends StatefulWidget {
 
 class _PresentationPageState extends State<PresentationPage> {
   final PageController _controller = PageController(initialPage: 0);
-  final List<FlashcardModel> _incorrectAnswers = [];
+  final List<QuizItem> _incorrectAnswers = [];
   bool _animation = false;
 
   @override
@@ -113,10 +114,12 @@ class _PresentationPageState extends State<PresentationPage> {
         child: PageView(
           controller: _controller,
           children: widget.flashcards
+              .where((e) => e.data is ClassicFlashcard)
               .map((e) => Padding(
                     padding: const EdgeInsets.all(50.0),
                     child: FlashcardWidget(
-                      item: e,
+                      item: e.data as ClassicFlashcard,
+                      imageUri: e.imageUri,
                     ),
                   ))
               .toList(growable: false),

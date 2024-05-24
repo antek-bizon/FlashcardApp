@@ -1,7 +1,6 @@
 import 'dart:convert';
 
-import 'package:flashcards/data/models/flashcard.dart';
-import 'package:flashcards/presentation/widgets/colorful_textfield/colorful_text_editing_controller.dart';
+import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalStorageRepository {
@@ -24,17 +23,17 @@ class LocalStorageRepository {
     }
   }
 
-  Future<Map<String, FlashcardGroup>> getFlashcardGroups() async {
-    final map = <String, FlashcardGroup>{};
+  Future<Map<String, QuizGroup>> getQuizGroups() async {
+    final map = <String, QuizGroup>{};
     final groupNames = _pref.getStringList(jsonEntry) ?? [];
     for (final name in groupNames) {
-      map[name] = FlashcardGroup(null);
+      map[name] = QuizGroup(null);
     }
 
     return map;
   }
 
-  Future<void> addFlashcardGroup(String name) async {
+  Future<void> addQuizGroup(String name) async {
     final keys = _pref.getStringList(jsonEntry) ?? [];
     if (!keys.contains(name) &&
         !(await _pref.setStringList(jsonEntry, [...keys, name]))) {
@@ -42,7 +41,7 @@ class LocalStorageRepository {
     }
   }
 
-  Future<void> removeGroup(String key) async {
+  Future<void> removeQuizGroup(String key) async {
     final keys = _pref.getStringList(jsonEntry) ?? [];
     if (!keys.remove(key)) {
       throw "Removing local group key failed";
@@ -60,38 +59,34 @@ class LocalStorageRepository {
     }
   }
 
-  Future<List<FlashcardModel>> getFlashcards(String groupName) async {
+  Future<List<QuizItem>> getQuizItem(String groupName) async {
     final flashcardsJson = _pref.getString(groupName);
 
     if (flashcardsJson == null) return [];
 
-    final List<FlashcardModel> flashcards = [];
+    final List<QuizItem> flashcards = [];
 
-    for (final e in jsonDecode(flashcardsJson) as List) {
-      final question = e["question"];
-      final answer = e["answer"];
+    for (final Map<String, dynamic> e in jsonDecode(flashcardsJson) as List) {
+      if (!e.containsKey("type") || !e.containsKey("data")) {
+        continue;
+      }
 
-      if (question == null || answer == null) continue;
-
+      final typeIndex = e["type"] as int;
+      final type = QuizItemType.values[typeIndex];
+      final json = e["data"] as Map<String, dynamic>;
       final imageUri = e["image"];
-      final styleListString = e["style_list"];
-      final styleList = (styleListString != null)
-          ? StylesList.fromRanges(
-              (styleListString as List).cast<List>(), answer.length)
-          : StylesList.generate(answer.length);
 
-      flashcards.add(FlashcardModel(
-          question: question,
-          answer: answer,
-          imageUri: imageUri,
-          styles: styleList));
+      flashcards.add(QuizItem.fromJson(
+        type: type,
+        json: json,
+        imageUri: imageUri,
+      ));
     }
 
     return flashcards;
   }
 
-  Future<void> updateJson(
-      String groupName, List<FlashcardModel> flashcards) async {
+  Future<void> updateJson(String groupName, List<QuizItem> flashcards) async {
     final String json = jsonEncode(flashcards.map((e) => e.toJson()).toList());
     if (!await _pref.setString(groupName, json)) {
       throw "Failed to update group items locally";

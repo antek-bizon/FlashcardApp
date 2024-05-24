@@ -1,7 +1,6 @@
 import 'dart:async';
 
-import 'package:flashcards/data/models/flashcard.dart';
-import 'package:flashcards/presentation/widgets/colorful_textfield/colorful_text_editing_controller.dart';
+import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:form_builder_image_picker/form_builder_image_picker.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:http/http.dart' as http;
@@ -33,16 +32,15 @@ class DatabaseRepository {
     _pb.authStore.clear();
   }
 
-  Future<Map<String, FlashcardGroup>> getFlashcardGroups() async {
+  Future<Map<String, QuizGroup>> getQuizGroups() async {
     try {
-      final dbResponse = await _pb
-          .collection('flashcard_groups')
-          .getFullList(fields: "id,name");
-      final map = <String, FlashcardGroup>{};
+      final dbResponse =
+          await _pb.collection('quiz_groups').getFullList(fields: "id,name");
+      final map = <String, QuizGroup>{};
       for (final field in dbResponse) {
         final id = field.id;
         final flashcardGroupName = field.getStringValue("name");
-        map[flashcardGroupName] = FlashcardGroup(id);
+        map[flashcardGroupName] = QuizGroup(id);
       }
       return map;
     } on ClientException catch (err) {
@@ -50,80 +48,73 @@ class DatabaseRepository {
     }
   }
 
-  Future<String> addFlashcardGroup(String name) async {
+  Future<String> addQuizGroup(String name) async {
     try {
       final result =
-          await _pb.collection("flashcard_groups").create(body: {"name": name});
+          await _pb.collection("quiz_groups").create(body: {"name": name});
       return result.id;
     } on ClientException catch (err) {
       throw err.response["message"].toString();
     }
   }
 
-  Future<void> removeFlashcardGroup(String id) async {
+  Future<void> removeQuizGroup(String id) async {
     try {
       if (id.trim().isEmpty) {
         throw "Failed to remove group from server. Id was a null";
       }
-      await _pb.collection("flashcard_groups").delete(id);
+      await _pb.collection("quiz_groups").delete(id);
     } on ClientException catch (err) {
       throw err.response["message"].toString();
     }
   }
 
-  Future<List<FlashcardModel>> getFlashcards(String groupId) async {
+  Future<List<QuizItem>> getQuizItem(String groupId) async {
     try {
       if (groupId.trim().isEmpty) {
-        throw "Cannot get flashcards from server. Group id is null.";
+        throw "Cannot get quiz_items from server. Group id is null.";
       }
 
       final dbResponse = await _pb
-          .collection('flashcards')
-          .getFullList(filter: "flashcard_group.id = '$groupId'");
+          .collection('quiz_items')
+          .getFullList(filter: "group.id = '$groupId'");
 
-      return dbResponse.map<FlashcardModel>((e) {
+      final result = <QuizItem>[];
+
+      for (final e in dbResponse) {
         final id = e.id;
-        final question = e.getStringValue("question");
-        final answer = e.getStringValue("answer");
+        final type = QuizItemType.values.elementAtOrNull(e.getIntValue("type"));
+        if (type == null) {
+          continue;
+        }
+        final json = e.getDataValue<Map<String, dynamic>>("data");
         final imageFilename = e.getStringValue("image");
         final imageUri = (imageFilename.isNotEmpty)
-            ? _pb.files.getUrl(e, imageFilename)
-            : null;
-        final styleListData = e.getListValue("style_list");
-        final styleList = (styleListData.isNotEmpty &&
-                styleListData.first != null)
-            ? StylesList.fromRanges(styleListData.cast<List>(), answer.length)
+            ? _pb.files.getUrl(e, imageFilename).toString()
             : null;
 
-        return FlashcardModel(
-            question: question,
-            answer: answer,
-            id: id,
-            imageUri: (imageUri != null) ? imageUri.toString() : null,
-            styles: styleList);
-      }).toList();
+        result.add(QuizItem.fromJson(
+            type: type, json: json, id: id, imageUri: imageUri));
+      }
+
+      return result;
     } on ClientException catch (err) {
       throw err.response["message"].toString();
     }
   }
 
-  Future<String> addFlashcard(
-      String groupId, FlashcardModel item, XFileImage? image) async {
+  Future<String> addQuizItem(
+      String groupId, QuizItem item, XFileImage? image) async {
     try {
       if (groupId.trim().isEmpty) {
         throw "Cannot add flashcard. Group Id is null";
       }
-      final body = {
-        "question": item.question,
-        "answer": item.answer,
-        "flashcard_group": groupId,
-        "style_list": item.styles?.toJson()
-      };
+      final body = {"group": groupId, ...item.toJson()};
 
       final files = await _getFileToUpload(image);
 
       final result =
-          await _pb.collection("flashcards").create(body: body, files: files);
+          await _pb.collection("quiz_items").create(body: body, files: files);
       return result.id;
     } on ClientException catch (err) {
       throw err.response["message"].toString();
@@ -142,36 +133,30 @@ class DatabaseRepository {
     return [];
   }
 
-  Future<void> removeFlashcard(FlashcardModel item) async {
+  Future<void> removeQuizItem(QuizItem item) async {
     try {
       final id = item.id;
       if (id == null) {
         throw "Cannot remove flashcard. Id is null";
       }
 
-      await _pb.collection("flashcards").delete(id);
+      await _pb.collection("quiz_items").delete(id);
     } on ClientException catch (err) {
       throw err.response["message"].toString();
     }
   }
 
-  Future<void> updateFlashcard(FlashcardModel item, String groupId) async {
+  Future<void> updateQuizItem(QuizItem item, String groupId) async {
     try {
       final id = item.id;
       if (id == null) {
-        item.id = await addFlashcard(groupId, item, null);
+        item.id = await addQuizItem(groupId, item, null);
         return;
       }
 
-      final body = {
-        "question": item.question,
-        "answer": item.answer,
-        "style_list": item.styles?.toJson()
-      };
+      final body = {"data": item.data.toJson()};
 
-      //if (item.styleList != null)
-
-      await _pb.collection("flashcards").update(id, body: body);
+      await _pb.collection("quiz_items").update(id, body: body);
     } on ClientException catch (err) {
       throw err.response["message"].toString();
     }

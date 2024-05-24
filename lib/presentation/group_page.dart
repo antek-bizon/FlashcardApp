@@ -1,8 +1,9 @@
-import 'package:flashcards/cubits/flashcards.dart';
+import 'package:flashcards/cubits/quiz_items.dart';
 import 'package:flashcards/cubits/groups.dart';
+import 'package:flashcards/data/models/classic_flashcard.dart';
 import 'package:flashcards/presentation/exam_page.dart';
 import 'package:flashcards/presentation/widgets/add_dialog.dart';
-import 'package:flashcards/data/models/flashcard.dart';
+import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:flashcards/presentation/presentation_page.dart';
 import 'package:flashcards/presentation/widgets/flashcard_list_item.dart';
 import 'package:flashcards/utils.dart';
@@ -34,8 +35,8 @@ class _GroupPageState extends State<GroupPage> {
     super.initState();
 
     context
-        .read<CardCubit>()
-        .getFlashcards(authState(context), widget.groupName, widget.groupId);
+        .read<QuizItemCubit>()
+        .getQuizItem(authState(context), widget.groupName, widget.groupId);
   }
 
   void _onMenuSelected(MenuItem option, BuildContext context) {
@@ -61,10 +62,10 @@ class _GroupPageState extends State<GroupPage> {
     showDialog<String>(
       context: context,
       builder: (BuildContext context) =>
-          BlocBuilder<CardCubit, CardState>(builder: (context, state) {
-        if (state is SuccessCardState) {
+          BlocBuilder<QuizItemCubit, QuizItemState>(builder: (context, state) {
+        if (state is SuccessItemState) {
           return AddFlashcardDialog(
-            onAdd: (item, image) => context.read<CardCubit>().addFlashcard(
+            onAdd: (item, image) => context.read<QuizItemCubit>().addQuizItem(
                 authState: authState(context),
                 groupName: widget.groupName,
                 groupId: widget.groupId,
@@ -82,7 +83,7 @@ class _GroupPageState extends State<GroupPage> {
   }
 
   void _showPresentationPage(
-      BuildContext context, List<FlashcardModel> flashcardGroup) {
+      BuildContext context, List<QuizItem> flashcardGroup) {
     // _endReoreder();
     Navigator.push(
       context,
@@ -91,13 +92,11 @@ class _GroupPageState extends State<GroupPage> {
     );
   }
 
-  void _showExamPage(
-      BuildContext context, List<FlashcardModel> flashcardGroup) {
+  void _showExamPage(BuildContext context, List<QuizItem> flashcardGroup) {
     // _endReoreder();
     Navigator.push(
       context,
-      MaterialPageRoute(
-          builder: (context) => ExamPage(flashcards: flashcardGroup)),
+      MaterialPageRoute(builder: (context) => ExamPage(items: flashcardGroup)),
     );
   }
 
@@ -186,9 +185,9 @@ class _GroupPageState extends State<GroupPage> {
         ],
       ),
       body: DefaultBody(
-          child: BlocConsumer<CardCubit, CardState>(
+          child: BlocConsumer<QuizItemCubit, QuizItemState>(
         builder: (context, state) {
-          if (state is SuccessCardState) {
+          if (state is SuccessItemState) {
             final flashcards = state.flashcards;
             return SafeArea(
               child: ListView.builder(
@@ -200,21 +199,25 @@ class _GroupPageState extends State<GroupPage> {
                           10000),
                   itemBuilder: (context, index) {
                     final item = flashcards[index];
-                    final cubit = context.read<CardCubit>();
+                    final cubit = context.read<QuizItemCubit>();
 
-                    return FlashcardListItem(
-                      key: UniqueKey(),
-                      index: index,
-                      flashcard: item,
-                      flashcardKey: widget.groupName,
-                      onDelete: () => cubit.removeFlashcard(authState(context),
-                          widget.groupName, index, widget.groupId != null),
-                      onUpdate: () => cubit.updateFlashcard(authState(context),
-                          widget.groupName, index, widget.groupId),
-                    );
+                    if (item.data is ClassicFlashcard) {
+                      return FlashcardListItem(
+                        key: UniqueKey(),
+                        index: index,
+                        flashcard: item.data as ClassicFlashcard,
+                        imageUri: item.imageUri,
+                        flashcardKey: widget.groupName,
+                        onDelete: () => cubit.removeQuizItem(authState(context),
+                            widget.groupName, index, widget.groupId != null),
+                        onUpdate: () => cubit.updateQuizItem(authState(context),
+                            widget.groupName, index, widget.groupId),
+                      );
+                    }
+                    return null;
                   }),
             );
-          } else if (state is ErrorCardState) {
+          } else if (state is ErrorItemState) {
             if (kDebugMode) {
               print("Error in group page: ${state.message}");
             }
@@ -240,9 +243,9 @@ class _GroupPageState extends State<GroupPage> {
         // color: Theme.of(context).colorScheme.primary,
         shape: const CircularNotchedRectangle(),
         notchMargin: 10,
-        child: BlocBuilder<CardCubit, CardState>(
+        child: BlocBuilder<QuizItemCubit, QuizItemState>(
           builder: (context, state) {
-            if (state is SuccessCardState) {
+            if (state is SuccessItemState) {
               final flashcards = state.flashcards;
 
               return Row(
@@ -254,7 +257,7 @@ class _GroupPageState extends State<GroupPage> {
                     enabled: flashcards.isNotEmpty,
                     onSelected: (value) {
                       final list = List.generate(flashcards.length,
-                          (index) => FlashcardModel.copy(flashcards[index]));
+                          (index) => QuizItem.copy(flashcards[index]));
                       if (value == PresentationButtonOptions.shuffle) {
                         list.shuffle();
                       }
@@ -305,7 +308,7 @@ class ReorderableFlashcardItem extends StatelessWidget {
       required this.index,
       this.elevation});
 
-  final FlashcardModel flashcard;
+  final ClassicFlashcard flashcard;
   final int index;
   final double? elevation;
 

@@ -13,6 +13,7 @@ Future<void> main() async {
     save: (String data) async => prefs.setString('pb_auth', data),
     initial: prefs.getString('pb_auth'),
   );
+
   runApp(App(
       themeRepository: ThemeRepository(prefs),
       databaseRepository: DatabaseRepository(

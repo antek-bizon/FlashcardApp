@@ -1,7 +1,7 @@
 import 'package:flashcards/cubits/auth.dart';
 import 'package:flashcards/cubits/groups.dart';
 import 'package:flashcards/cubits/theme.dart';
-import 'package:flashcards/data/models/flashcard.dart';
+import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/presentation/widgets/add_dialog.dart';
 import 'package:flashcards/presentation/group_page.dart';
@@ -237,7 +237,7 @@ class _HomePageBodyState extends State<HomePageBody> {
 }
 
 class GroupList extends StatelessWidget {
-  final List<MapEntry<String, FlashcardGroup>> groups;
+  final List<MapEntry<String, QuizGroup>> groups;
   final void Function(String, String?) onOpen;
   final void Function(String) onUpload;
 

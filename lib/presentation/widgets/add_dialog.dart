@@ -1,6 +1,7 @@
 import 'dart:math';
 
-import 'package:flashcards/data/models/flashcard.dart';
+import 'package:flashcards/data/models/classic_flashcard.dart';
+import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:flashcards/presentation/widgets/colorful_textfield/colorful_text_editing_controller.dart';
 import 'package:flashcards/presentation/widgets/colorful_textfield/text_field_toolbar.dart';
 import 'package:flashcards/presentation/widgets/multi_line_text_field.dart';
@@ -95,8 +96,8 @@ class _AddGroupDialogState extends State<AddGroupDialog> {
 }
 
 class AddFlashcardDialog extends StatefulWidget {
-  final void Function(FlashcardModel, XFileImage?) onAdd;
-  final List<FlashcardModel> existingFlashcards;
+  final void Function(QuizItem, XFileImage?) onAdd;
+  final List<QuizItem> existingFlashcards;
 
   const AddFlashcardDialog(
       {super.key, required this.onAdd, required this.existingFlashcards});
@@ -201,16 +202,20 @@ class _AddFlashcardDialogState extends State<AddFlashcardDialog> {
                     ElevatedButton(
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
-                            final item = FlashcardModel(
-                                question: _questionField.text,
-                                answer: _answerField.text);
+                            final item = QuizItem(
+                              type: QuizItemType.classic,
+                              data: ClassicFlashcard(
+                                  question: _questionField.text,
+                                  answer: _answerField.text),
+                            );
 
                             if (widget.existingFlashcards.contains(item)) {
                               setState(() {
                                 isError = true;
                               });
                             } else {
-                              item.styles = _answerField.styles;
+                              final data = item.data as ClassicFlashcard;
+                              data.styles = _answerField.styles;
                               widget.onAdd(item, _img);
                               Navigator.pop(context);
                             }

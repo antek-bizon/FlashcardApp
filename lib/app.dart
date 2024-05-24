@@ -1,5 +1,5 @@
 import 'package:flashcards/cubits/auth.dart';
-import 'package:flashcards/cubits/flashcards.dart';
+import 'package:flashcards/cubits/quiz_items.dart';
 import 'package:flashcards/cubits/groups.dart';
 import 'package:flashcards/cubits/theme.dart';
 import 'package:flashcards/data/repositories/database.dart';
@@ -38,7 +38,7 @@ class App extends StatelessWidget {
                 databaseRepository: databaseRepository,
                 localStorageRepository: localStorageRepository)),
         BlocProvider(
-            create: (context) => CardCubit(
+            create: (context) => QuizItemCubit(
                 databaseRepository: databaseRepository,
                 localStorageRepository: localStorageRepository)),
       ],

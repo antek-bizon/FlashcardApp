@@ -1,5 +1,5 @@
 import 'package:flashcards/cubits/auth.dart';
-import 'package:flashcards/data/models/flashcard.dart';
+import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:flashcards/data/repositories/database.dart';
 import 'package:flashcards/data/repositories/localstorage.dart';
 import 'package:flashcards/utils.dart';
@@ -17,14 +17,14 @@ class ErrorGroupState extends GroupState {
 }
 
 class SuccessGroupState extends GroupState {
-  final Map<String, FlashcardGroup> groups;
+  final Map<String, QuizGroup> groups;
   SuccessGroupState(this.groups);
 }
 
 class GroupCubit extends Cubit<GroupState> {
   final DatabaseRepository _dbr;
   final LocalStorageRepository _lsr;
-  Map<String, FlashcardGroup> _groups = {};
+  Map<String, QuizGroup> _groups = {};
 
   GroupCubit(
       {required DatabaseRepository databaseRepository,
@@ -36,8 +36,8 @@ class GroupCubit extends Cubit<GroupState> {
   void fetchGroups(final AuthState authState) {
     _try(() async {
       final futures = [
-        if (isAuth(authState)) _dbr.getFlashcardGroups(),
-        _lsr.getFlashcardGroups()
+        if (isAuth(authState)) _dbr.getQuizGroups(),
+        _lsr.getQuizGroups()
       ];
       final results = await Future.wait(futures);
       _groups = _removeGroupDuplicates(results);
@@ -47,10 +47,9 @@ class GroupCubit extends Cubit<GroupState> {
 
   void addGroup(final AuthState authState, String name) {
     _try(() async {
-      final id =
-          (isAuth(authState)) ? await _dbr.addFlashcardGroup(name) : null;
-      await _lsr.addFlashcardGroup(name);
-      _groups.putIfAbsent(name, () => FlashcardGroup(id));
+      final id = (isAuth(authState)) ? await _dbr.addQuizGroup(name) : null;
+      await _lsr.addQuizGroup(name);
+      _groups.putIfAbsent(name, () => QuizGroup(id));
       emit(SuccessGroupState(_groups));
     });
   }
@@ -58,8 +57,8 @@ class GroupCubit extends Cubit<GroupState> {
   void removeGroup(final AuthState authState, String name, String? id) {
     _try(() async {
       final futures = [
-        if (isAuth(authState) && id != null) _dbr.removeFlashcardGroup(id),
-        _lsr.removeGroup(name)
+        if (isAuth(authState) && id != null) _dbr.removeQuizGroup(id),
+        _lsr.removeQuizGroup(name)
       ];
       await Future.wait(futures);
       _groups.remove(name);
@@ -73,11 +72,10 @@ class GroupCubit extends Cubit<GroupState> {
         throw "Cannot upload group items without authorization";
       }
 
-      final [flashcards as List<FlashcardModel>, id as String] =
-          await Future.wait(
-              [_lsr.getFlashcards(name), _dbr.addFlashcardGroup(name)]);
+      final [flashcards as List<QuizItem>, id as String] =
+          await Future.wait([_lsr.getQuizItem(name), _dbr.addQuizGroup(name)]);
       _groups[name]?.id = id;
-      final requests = flashcards.map((e) => _dbr.addFlashcard(id, e, null));
+      final requests = flashcards.map((e) => _dbr.addQuizItem(id, e, null));
       final results = await Future.wait(requests);
       for (int i = 0; i < results.length; i++) {
         flashcards[i].id = results[i];
@@ -96,9 +94,9 @@ class GroupCubit extends Cubit<GroupState> {
     }
   }
 
-  Map<String, FlashcardGroup> _removeGroupDuplicates(
-      final List<Map<String, FlashcardGroup>> listWithDuplicates) {
-    final Map<String, FlashcardGroup> result = {};
+  Map<String, QuizGroup> _removeGroupDuplicates(
+      final List<Map<String, QuizGroup>> listWithDuplicates) {
+    final Map<String, QuizGroup> result = {};
     for (final groupMap in listWithDuplicates) {
       groupMap.forEach((key, value) {
         if (!result.containsKey(key)) {

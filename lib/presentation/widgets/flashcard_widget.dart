@@ -1,15 +1,13 @@
-import 'package:flashcards/data/models/flashcard.dart';
+import 'package:flashcards/data/models/classic_flashcard.dart';
 import 'package:flashcards/presentation/widgets/colorful_textfield/colorful_text_editing_controller.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flutter/material.dart';
 
 class FlashcardWidget extends StatefulWidget {
-  final FlashcardModel item;
+  final ClassicFlashcard item;
+  final String? imageUri;
 
-  const FlashcardWidget({
-    super.key,
-    required this.item,
-  });
+  const FlashcardWidget({super.key, required this.item, this.imageUri});
 
   @override
   State<FlashcardWidget> createState() => _FlashcardWidgetState();
@@ -30,6 +28,7 @@ class _FlashcardWidgetState extends State<FlashcardWidget> {
       onTap: _toggleCard,
       child: FlashcardDraft(
         item: widget.item,
+        imageUri: widget.imageUri,
         showFront: _showFront,
       ),
     );
@@ -40,19 +39,14 @@ class FlashcardDraft extends StatelessWidget {
   const FlashcardDraft(
       {super.key,
       required this.item,
-      // required this.question,
-      // required this.answer,
-      // this.imageUri,
-      // this.textStyle,
+      this.imageUri,
       required this.showFront,
       this.backColor = Colors.teal});
-  // final String question;
-  // final String answer;
-  // final String? imageUri;
-  // final String? textStyle;
-  final FlashcardModel item;
-  final bool showFront;
+
+  final ClassicFlashcard item;
+  final String? imageUri;
   final Color backColor;
+  final bool showFront;
 
   Color _sideColor(BuildContext context) {
     return Color.lerp((showFront) ? Colors.blueAccent : backColor,
@@ -67,7 +61,7 @@ class FlashcardDraft extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final image = getImage(item.imageUri);
+    final image = getImage(imageUri);
     final list = item.styles ?? StylesList.generate(item.answer.length);
     final theme = Theme.of(context);
 
