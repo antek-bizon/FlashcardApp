@@ -1,16 +1,18 @@
 import 'package:flashcards/cubits/quiz_items.dart';
 import 'package:flashcards/cubits/groups.dart';
 import 'package:flashcards/data/models/classic_flashcard.dart';
+import 'package:flashcards/data/models/quiz_group.dart';
 import 'package:flashcards/presentation/exam_page.dart';
-import 'package:flashcards/presentation/widgets/add_dialog.dart';
+import 'package:flashcards/presentation/widgets/dialogs/add_quiz_item.dart';
 import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:flashcards/presentation/presentation_page.dart';
-import 'package:flashcards/presentation/widgets/flashcard_list_item.dart';
+import 'package:flashcards/presentation/widgets/list_items/classic_flashcard.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/presentation/widgets/default_body.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:form_builder_image_picker/form_builder_image_picker.dart';
 
 enum MenuItem {
   //  reorder,
@@ -20,10 +22,9 @@ enum MenuItem {
 enum PresentationButtonOptions { none, shuffle }
 
 class GroupPage extends StatefulWidget {
-  final String groupName;
-  final String? groupId;
+  final QuizGroup group;
 
-  const GroupPage({super.key, required this.groupName, this.groupId});
+  const GroupPage({super.key, required this.group});
 
   @override
   State<GroupPage> createState() => _GroupPageState();
@@ -34,9 +35,7 @@ class _GroupPageState extends State<GroupPage> {
   void initState() {
     super.initState();
 
-    context
-        .read<QuizItemCubit>()
-        .getQuizItem(authState(context), widget.groupName, widget.groupId);
+    context.read<QuizItemCubit>().getQuizItem(authState(context), widget.group);
   }
 
   void _onMenuSelected(MenuItem option, BuildContext context) {
@@ -49,7 +48,7 @@ class _GroupPageState extends State<GroupPage> {
       case MenuItem.deleteGroup:
         context
             .read<GroupCubit>()
-            .removeGroup(authState(context), widget.groupName, widget.groupId);
+            .removeGroup(authState(context), widget.group);
         Navigator.of(context).pop();
         break;
       default:
@@ -57,20 +56,23 @@ class _GroupPageState extends State<GroupPage> {
     }
   }
 
+  void _onAddQuizItem(BuildContext context, QuizItem item, XFileImage? image) {
+    context.read<QuizItemCubit>().addQuizItem(
+        authState: authState(context),
+        group: widget.group,
+        item: item,
+        image: image);
+  }
+
   void _showAddDialog(BuildContext context) {
     // _endReoreder();
     showDialog<String>(
       context: context,
-      builder: (BuildContext context) =>
+      builder: (context) =>
           BlocBuilder<QuizItemCubit, QuizItemState>(builder: (context, state) {
         if (state is SuccessItemState) {
-          return AddFlashcardDialog(
-            onAdd: (item, image) => context.read<QuizItemCubit>().addQuizItem(
-                authState: authState(context),
-                groupName: widget.groupName,
-                groupId: widget.groupId,
-                item: item,
-                image: image),
+          return AddClassicFlashcardDialog(
+            onAdd: (item, image) => _onAddQuizItem(context, item, image),
             existingFlashcards: state.flashcards,
           );
         } else {
@@ -162,7 +164,7 @@ class _GroupPageState extends State<GroupPage> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: Text(widget.groupName),
+        title: Text(widget.group.name),
         actions: [
           PopupMenuButton<MenuItem>(
             onSelected: (MenuItem option) {
@@ -199,19 +201,14 @@ class _GroupPageState extends State<GroupPage> {
                           10000),
                   itemBuilder: (context, index) {
                     final item = flashcards[index];
-                    final cubit = context.read<QuizItemCubit>();
+                    // final cubit = context.read<QuizItemCubit>();
 
                     if (item.data is ClassicFlashcard) {
-                      return FlashcardListItem(
-                        key: UniqueKey(),
+                      return ClassicFlashcardListItem(
                         index: index,
                         flashcard: item.data as ClassicFlashcard,
+                        group: widget.group,
                         imageUri: item.imageUri,
-                        flashcardKey: widget.groupName,
-                        onDelete: () => cubit.removeQuizItem(authState(context),
-                            widget.groupName, index, widget.groupId != null),
-                        onUpdate: () => cubit.updateQuizItem(authState(context),
-                            widget.groupName, index, widget.groupId),
                       );
                     }
                     return null;

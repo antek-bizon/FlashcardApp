@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flashcards/data/models/quiz_group.dart';
 import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:form_builder_image_picker/form_builder_image_picker.dart';
 import 'package:pocketbase/pocketbase.dart';
@@ -39,8 +40,8 @@ class DatabaseRepository {
       final map = <String, QuizGroup>{};
       for (final field in dbResponse) {
         final id = field.id;
-        final flashcardGroupName = field.getStringValue("name");
-        map[flashcardGroupName] = QuizGroup(id);
+        final name = field.getStringValue("name");
+        map[name] = QuizGroup(name: name, id: id);
       }
       return map;
     } on ClientException catch (err) {

@@ -1,4 +1,5 @@
 import 'package:flashcards/cubits/auth.dart';
+import 'package:flashcards/data/models/quiz_group.dart';
 import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:flashcards/data/repositories/database.dart';
 import 'package:flashcards/data/repositories/localstorage.dart';
@@ -34,11 +35,11 @@ class QuizItemCubit extends Cubit<QuizItemState> {
         _lsr = localStorageRepository,
         super(InitItemState());
 
-  void getQuizItem(AuthState authState, String groupName, String? groupId) {
+  void getQuizItem(AuthState authState, QuizGroup group) {
     _try(() async {
       final futures = [
-        if (isAuth(authState) && groupId != null) _dbr.getQuizItem(groupId),
-        _lsr.getQuizItem(groupName)
+        if (isAuth(authState) && group.hasId) _dbr.getQuizItem(group.id!),
+        _lsr.getQuizItem(group.name)
       ];
       final results = await Future.wait(futures);
       _cards.clear();
@@ -49,30 +50,28 @@ class QuizItemCubit extends Cubit<QuizItemState> {
 
   void addQuizItem(
       {required AuthState authState,
-      required String groupName,
-      String? groupId,
+      required QuizGroup group,
       required QuizItem item,
       XFileImage? image}) {
     _try(() async {
-      final id = (isAuth(authState) && groupId != null)
-          ? await _dbr.addQuizItem(groupId, item, image)
+      final id = (isAuth(authState) && group.hasId)
+          ? await _dbr.addQuizItem(group.id!, item, image)
           : null;
       item.id = id;
       item.imageUri = image?.file.path;
       _cards.add(item);
-      await _lsr.updateJson(groupName, _cards);
+      await _lsr.updateJson(group.name, _cards);
       emit(SuccessItemState(_cards));
     });
   }
 
-  void removeQuizItem(
-      AuthState authState, String groupName, int index, bool hasGroupId) {
+  void removeQuizItem(AuthState authState, QuizGroup group, int index) {
     _try(() async {
       final item = _cards.removeAt(index);
       final futures = [
-        if (isAuth(authState) && hasGroupId && item.id != null)
+        if (isAuth(authState) && group.hasId && item.id != null)
           _dbr.removeQuizItem(item),
-        _lsr.updateJson(groupName, _cards)
+        _lsr.updateJson(group.name, _cards)
       ];
 
       await Future.wait(futures);
@@ -80,14 +79,13 @@ class QuizItemCubit extends Cubit<QuizItemState> {
     });
   }
 
-  void updateQuizItem(
-      AuthState authState, String groupName, int index, String? groupId) {
+  void updateQuizItem(AuthState authState, QuizGroup group, int index) {
     _try(() async {
       final item = _cards.elementAt(index);
       final futures = [
-        if (isAuth(authState) && groupId != null)
-          _dbr.updateQuizItem(item, groupId),
-        _lsr.updateJson(groupName, _cards)
+        if (isAuth(authState) && group.hasId)
+          _dbr.updateQuizItem(item, group.id!),
+        _lsr.updateJson(group.name, _cards)
       ];
 
       await Future.wait(futures);

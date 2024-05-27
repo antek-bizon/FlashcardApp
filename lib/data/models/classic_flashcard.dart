@@ -6,6 +6,8 @@ class ClassicFlashcard implements QuizItemBody {
   String answer;
   StylesList? styles;
 
+  static const classValue =
+      QuizItemId(QuizItemType.classic, "Classic Flashcard");
   static const String _questionEntry = "question";
   static const String _answerEntry = "answer";
   static const String _stylesEntry = "styles";

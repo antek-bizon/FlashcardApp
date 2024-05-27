@@ -1,9 +1,9 @@
 import 'package:flashcards/cubits/auth.dart';
 import 'package:flashcards/cubits/groups.dart';
 import 'package:flashcards/cubits/theme.dart';
-import 'package:flashcards/data/models/quiz_item.dart';
+import 'package:flashcards/data/models/quiz_group.dart';
+import 'package:flashcards/presentation/widgets/dialogs/add_group.dart';
 import 'package:flashcards/utils.dart';
-import 'package:flashcards/presentation/widgets/add_dialog.dart';
 import 'package:flashcards/presentation/group_page.dart';
 import 'package:flashcards/presentation/widgets/default_body.dart';
 import 'package:flashcards/presentation/widgets/my_snack_bar.dart';
@@ -64,32 +64,13 @@ class _HomePageState extends State<HomePage> {
         child: BlocConsumer<GroupCubit, GroupState>(
           builder: (context, state) {
             if (state is SuccessGroupState) {
-              final groups = state.groups.entries.toList();
-
-              return GroupList(
-                groups: groups,
-                onOpen: (groupName, groupId) {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => GroupPage(
-                          groupName: groupName,
-                          groupId: groupId,
-                        ),
-                      ));
-                },
-                onUpload: (groupName) => context
-                    .read<GroupCubit>()
-                    .uploadGroupItems(authState(context), groupName),
-              );
+              final groups = state.groups.values.toList();
+              return GroupList(groups: groups);
             } else if (state is ErrorGroupState) {
               return const Center(
-                child: Text("Error has occured. Please try again."),
-              );
+                  child: Text("Error has occured. Please try again."));
             } else {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const Center(child: CircularProgressIndicator());
             }
           },
           listener: (context, state) {
@@ -114,9 +95,7 @@ class _HomePageState extends State<HomePage> {
                   context.read<GroupCubit>().addGroup(authState(context), name);
                 });
           } else {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
         },
       ),
@@ -237,24 +216,20 @@ class _HomePageBodyState extends State<HomePageBody> {
 }
 
 class GroupList extends StatelessWidget {
-  final List<MapEntry<String, QuizGroup>> groups;
-  final void Function(String, String?) onOpen;
-  final void Function(String) onUpload;
+  final List<QuizGroup> groups;
 
-  const GroupList(
-      {super.key,
-      required this.groups,
-      required this.onOpen,
-      required this.onUpload});
+  const GroupList({super.key, required this.groups});
 
-  IconButton _cloudIcon(String key, String? id) {
-    return (id != null)
+  IconButton _cloudIcon(BuildContext context, QuizGroup group) {
+    return (group.id != null)
         ? const IconButton(
             onPressed: null,
             icon: Icon(Icons.cloud_done_outlined),
           )
         : IconButton(
-            onPressed: () => onUpload(key),
+            onPressed: () => context
+                .read<GroupCubit>()
+                .uploadGroupItems(authState(context), group.name),
             icon: const Icon(Icons.cloud_off_outlined),
           );
   }
@@ -275,11 +250,17 @@ class GroupList extends StatelessWidget {
 
           return Card(
             child: ListTile(
-              onTap: () => onOpen(group.key, group.value.id),
-              title: Text(group.key),
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => GroupPage(group: group),
+                    ));
+              },
+              title: Text(group.name),
               trailing: (BlocProvider.of<AuthCubit>(context).state
                       is SuccessAuthState)
-                  ? _cloudIcon(group.key, group.value.id)
+                  ? _cloudIcon(context, group)
                   : null,
             ),
           );

@@ -56,6 +56,7 @@ class QuizItem {
 
 enum QuizItemType {
   classic,
+  oneAnswer,
 }
 
 abstract class QuizItemBody {
@@ -75,12 +76,16 @@ abstract class QuizItemBody {
   }
 }
 
-class QuizGroup {
-  String? id;
-  QuizGroup(this.id);
+class QuizItemId {
+  final QuizItemType type;
+  final String name;
+  const QuizItemId(this.type, this.name);
 
   @override
-  String toString() {
-    return "FlashcardGroup: $id";
+  int get hashCode => Object.hash(type, name);
+
+  @override
+  bool operator ==(Object other) {
+    return other is QuizItemId && other.type == type;
   }
 }

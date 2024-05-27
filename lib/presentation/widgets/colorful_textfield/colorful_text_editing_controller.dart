@@ -215,6 +215,10 @@ class ColorfulTextEditingController extends TextEditingController {
   ColorfulTextEditingController({super.text, StylesList? styles})
       : _styles = styles ?? StylesList.generate(text?.length ?? 0);
 
+  ColorfulTextEditingController.fromTuple((String?, StylesList?) tuple)
+      : _styles = tuple.$2 ?? StylesList.generate(tuple.$1?.length ?? 0),
+        super(text: tuple.$1);
+
   int get _start => max(min(selection.baseOffset, selection.extentOffset), 0);
   int get _end => max(max(selection.baseOffset, selection.extentOffset), 0);
 

@@ -1,4 +1,5 @@
 import 'package:flashcards/cubits/auth.dart';
+import 'package:flashcards/data/models/quiz_group.dart';
 import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:flashcards/data/repositories/database.dart';
 import 'package:flashcards/data/repositories/localstorage.dart';
@@ -49,19 +50,19 @@ class GroupCubit extends Cubit<GroupState> {
     _try(() async {
       final id = (isAuth(authState)) ? await _dbr.addQuizGroup(name) : null;
       await _lsr.addQuizGroup(name);
-      _groups.putIfAbsent(name, () => QuizGroup(id));
+      _groups.putIfAbsent(name, () => QuizGroup(name: name, id: id));
       emit(SuccessGroupState(_groups));
     });
   }
 
-  void removeGroup(final AuthState authState, String name, String? id) {
+  void removeGroup(final AuthState authState, QuizGroup group) {
     _try(() async {
       final futures = [
-        if (isAuth(authState) && id != null) _dbr.removeQuizGroup(id),
-        _lsr.removeQuizGroup(name)
+        if (isAuth(authState) && group.hasId) _dbr.removeQuizGroup(group.id!),
+        _lsr.removeQuizGroup(group.name)
       ];
       await Future.wait(futures);
-      _groups.remove(name);
+      _groups.remove(group.name);
       emit(SuccessGroupState(_groups));
     });
   }

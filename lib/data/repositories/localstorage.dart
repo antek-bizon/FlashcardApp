@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flashcards/data/models/quiz_group.dart';
 import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -27,7 +28,7 @@ class LocalStorageRepository {
     final map = <String, QuizGroup>{};
     final groupNames = _pref.getStringList(jsonEntry) ?? [];
     for (final name in groupNames) {
-      map[name] = QuizGroup(null);
+      map[name] = QuizGroup(name: name);
     }
 
     return map;

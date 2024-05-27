@@ -5,9 +5,11 @@ class OneAnswer implements QuizItemBody {
   List<String> answers;
   int correctAnswer;
 
-  static const String _questionEntry = "question";
-  static const String _answersEntry = "answers";
-  static const String _correctAnswerEntry = "correct";
+  static const classValues =
+      QuizItemId(QuizItemType.oneAnswer, "One correct answer");
+  static const _questionEntry = "question";
+  static const _answersEntry = "answers";
+  static const _correctAnswerEntry = "correct";
 
   OneAnswer(
       {required this.question,

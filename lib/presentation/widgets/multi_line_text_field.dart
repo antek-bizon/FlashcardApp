@@ -8,12 +8,14 @@ class MultiLineTextField extends StatelessWidget {
     required this.validatorText,
     this.enabled = true,
     this.onChanged,
+    this.onSaved,
   });
 
   final TextEditingController controller;
   final String hintText;
   final String validatorText;
   final void Function(String)? onChanged;
+  final void Function(String?)? onSaved;
   final bool enabled;
 
   @override
@@ -35,6 +37,7 @@ class MultiLineTextField extends StatelessWidget {
         return null;
       },
       onChanged: onChanged,
+      onSaved: onSaved,
     );
   }
 }
