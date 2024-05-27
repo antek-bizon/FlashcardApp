@@ -15,17 +15,20 @@ class TextFieldToolbar extends StatefulWidget {
 class _TextFieldToolbarState extends State<TextFieldToolbar> {
   final StreamController<TextEditingValue> _streamController =
       StreamController();
+  late VoidCallback _listener;
 
   @override
   void initState() {
     super.initState();
-    widget.controller.addListener(() {
+    _listener = () {
       _streamController.sink.add(widget.controller.value);
-    });
+    };
+    widget.controller.addListener(_listener);
   }
 
   @override
   void dispose() {
+    widget.controller.removeListener(_listener);
     _streamController.close();
     super.dispose();
   }

@@ -85,12 +85,12 @@ class _ClassicFlashcardListItemState extends State<ClassicFlashcardListItem> {
                   MultiLineTextField(
                       controller: _questionField,
                       enabled: _editable,
-                      hintText: "Question",
+                      labelText: "Question",
                       validatorText: "Please enter a question"),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2.0),
                     child: MultiLineTextField(
-                        hintText: "Answer",
+                        labelText: "Answer",
                         validatorText: "Please enter an answer",
                         controller: _answerField,
                         enabled: _editable),

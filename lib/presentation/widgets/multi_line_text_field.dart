@@ -4,7 +4,7 @@ class MultiLineTextField extends StatelessWidget {
   const MultiLineTextField({
     super.key,
     required this.controller,
-    required this.hintText,
+    required this.labelText,
     required this.validatorText,
     this.enabled = true,
     this.onChanged,
@@ -12,7 +12,7 @@ class MultiLineTextField extends StatelessWidget {
   });
 
   final TextEditingController controller;
-  final String hintText;
+  final String labelText;
   final String validatorText;
   final void Function(String)? onChanged;
   final void Function(String?)? onSaved;
@@ -27,7 +27,7 @@ class MultiLineTextField extends StatelessWidget {
       minLines: 1,
       keyboardType: TextInputType.multiline,
       decoration: InputDecoration(
-        hintText: hintText,
+        labelText: labelText,
         contentPadding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
       ),
       validator: (String? value) {

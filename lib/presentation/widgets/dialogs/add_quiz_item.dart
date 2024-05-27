@@ -1,19 +1,20 @@
 import 'dart:math';
 
+import 'package:flashcards/cubits/quiz_items.dart';
 import 'package:flashcards/data/models/classic_flashcard.dart';
 import 'package:flashcards/data/models/one_answer.dart';
+import 'package:flashcards/data/models/quiz_group.dart';
 import 'package:flashcards/data/models/quiz_item.dart';
-import 'package:flashcards/presentation/widgets/colorful_textfield/colorful_text_editing_controller.dart';
-import 'package:flashcards/presentation/widgets/colorful_textfield/text_field_toolbar.dart';
+import 'package:flashcards/presentation/widgets/dialogs/add_classic_flashcard_dialog.dart';
+import 'package:flashcards/presentation/widgets/dialogs/add_one_answer_dialog.dart';
 import 'package:flashcards/presentation/widgets/multi_line_text_field.dart';
+import 'package:flashcards/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:form_builder_image_picker/form_builder_image_picker.dart';
 
-void _onChange(
-    BuildContext context,
-    QuizItemType type,
-    List<QuizItem> existingFlashcards,
-    void Function(QuizItem, XFileImage?) onAdd) {
+void onChange(BuildContext context, QuizItemType type,
+    List<QuizItem> existingFlashcards, QuizGroup group) {
   Navigator.pop(context);
   showDialog(
       context: context,
@@ -21,62 +22,70 @@ void _onChange(
         switch (type) {
           case QuizItemType.classic:
             return AddClassicFlashcardDialog(
-                onAdd: onAdd, existingFlashcards: existingFlashcards);
+                group: group, existingFlashcards: existingFlashcards);
           case QuizItemType.oneAnswer:
             return AddOneAnswerDialog(
-                onAdd: onAdd, existingFlashcards: existingFlashcards);
+                group: group, existingFlashcards: existingFlashcards);
           default:
             throw "Unknown quiz type";
         }
       });
 }
 
-class _FormFieldError with ChangeNotifier {
-  bool _isError = false;
-  bool get isError => _isError;
+void addQuizItem(BuildContext context,
+    {required QuizGroup group, required QuizItem item, XFileImage? image}) {
+  context.read<QuizItemCubit>().addQuizItem(
+      authState: authState(context), group: group, item: item, image: image);
+}
+
+class FormFieldError with ChangeNotifier {
+  String? _error;
+  bool get isError => _error != null;
+  String get error => _error ?? "";
 
   void reset() {
-    _isError = false;
+    _error = null;
     notifyListeners();
   }
 
   void tryReset() {
-    if (_isError) {
+    if (isError) {
       reset();
     }
   }
 
-  void error() {
-    _isError = true;
+  void setError(String message) {
+    _error = message;
     notifyListeners();
   }
 }
 
-class _AddQuizItemDialog extends StatelessWidget {
+class AddQuizItemBodyDialog extends StatelessWidget {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final Widget _child;
+  final List<Widget> _children;
   final VoidCallback _onAdd;
   final void Function(QuizItemType) _onChanged;
-  final _FormFieldError _errorNotifier;
-  final String _errorMessage;
+  final FormFieldError _errorNotifier;
+  final String _title;
   final QuizItemId _currentDropdownValue;
   static const _quizTypes = [
     ClassicFlashcard.classValue,
     OneAnswer.classValues,
   ];
-  _AddQuizItemDialog(
-      {required Widget child,
+  AddQuizItemBodyDialog(
+      {super.key,
+      required List<Widget> children,
       required void Function() onAdd,
       required void Function(QuizItemType) onChanged,
-      required _FormFieldError errorNotifier,
-      required String errorMessage,
+      required FormFieldError errorNotifier,
+      required String title,
       required QuizItemId currentDropdownValue})
       : _currentDropdownValue = currentDropdownValue,
-        _errorMessage = errorMessage,
         _errorNotifier = errorNotifier,
+        _title = title,
         _onAdd = onAdd,
         _onChanged = onChanged,
-        _child = child;
+        _children = children;
 
   @override
   Widget build(BuildContext context) {
@@ -84,15 +93,14 @@ class _AddQuizItemDialog extends StatelessWidget {
       child: SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: Padding(
-          padding: const EdgeInsets.all(15.0),
+          padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20),
           child: SizedBox(
             width: min(MediaQuery.of(context).size.width * 0.8, 400),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text("Add flashcard"),
-                const SizedBox(height: 15),
+                Text(_title),
                 DropdownButton(
                   value: _currentDropdownValue,
                   items: _quizTypes.map((e) {
@@ -107,28 +115,32 @@ class _AddQuizItemDialog extends StatelessWidget {
                     }
                   },
                 ),
-                const SizedBox(height: 15),
                 Form(
                   key: _formKey,
-                  child: _child,
+                  child: Column(
+                    children: _children,
+                  ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text("Cancel"),
-                    ),
-                    ElevatedButton(
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
                         onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            _onAdd();
-                          }
+                          Navigator.pop(context);
                         },
-                        child: const Text("Add"))
-                  ],
+                        child: const Text("Cancel"),
+                      ),
+                      ElevatedButton(
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              _onAdd();
+                            }
+                          },
+                          child: const Text("Add"))
+                    ],
+                  ),
                 ),
                 ListenableBuilder(
                   listenable: _errorNotifier,
@@ -138,7 +150,7 @@ class _AddQuizItemDialog extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             vertical: 8.0, horizontal: 35.0),
                         child: Text(
-                          _errorMessage,
+                          _errorNotifier.error,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               fontWeight: FontWeight.bold,
@@ -151,128 +163,6 @@ class _AddQuizItemDialog extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class AddClassicFlashcardDialog extends StatefulWidget {
-  final void Function(QuizItem, XFileImage?) onAdd;
-  final List<QuizItem> existingFlashcards;
-
-  const AddClassicFlashcardDialog(
-      {super.key, required this.onAdd, required this.existingFlashcards});
-
-  @override
-  State<AddClassicFlashcardDialog> createState() =>
-      _AddClassicFlashcardDialogState();
-}
-
-class _AddClassicFlashcardDialogState extends State<AddClassicFlashcardDialog> {
-  final _questionField = TextEditingController();
-  final _answerField = ColorfulTextEditingController();
-  XFileImage? _img;
-  final _FormFieldError _errorNotifier = _FormFieldError();
-
-  @override
-  void dispose() {
-    _questionField.dispose();
-    _answerField.dispose();
-    super.dispose();
-  }
-
-  void _onImage(List<dynamic>? imgs) {
-    setState(() {
-      if (imgs != null && imgs.isNotEmpty) {
-        _img = XFileImage(file: imgs.first);
-      } else {
-        _img = null;
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return _AddQuizItemDialog(
-      currentDropdownValue: ClassicFlashcard.classValue,
-      errorNotifier: _errorNotifier,
-      errorMessage: "This flashcard already exists",
-      onChanged: (type) =>
-          _onChange(context, type, widget.existingFlashcards, widget.onAdd),
-      onAdd: () {
-        final item = QuizItem(
-          type: QuizItemType.classic,
-          data: ClassicFlashcard(
-              question: _questionField.text, answer: _answerField.text),
-        );
-
-        if (widget.existingFlashcards.contains(item)) {
-          _errorNotifier.error();
-        } else {
-          final data = item.data as ClassicFlashcard;
-          data.styles = _answerField.styles;
-          widget.onAdd(item, _img);
-          Navigator.pop(context);
-        }
-      },
-      child: Column(
-        children: [
-          MultiLineTextField(
-            controller: _questionField,
-            hintText: "Question",
-            validatorText: "Please enter a question",
-            onChanged: (_) {
-              _errorNotifier.tryReset();
-            },
-          ),
-          MultiLineTextField(
-            controller: _answerField,
-            hintText: "Answer",
-            validatorText: "Please enter an answer",
-            onChanged: (_) {
-              _errorNotifier.tryReset();
-            },
-          ),
-          TextFieldToolbar(controller: _answerField),
-          FormBuilderImagePicker(
-            transformImageWidget: (context, displayImage) => Card(
-                // shape: const CircleBorder(),
-                clipBehavior: Clip.antiAlias,
-                child: Center(child: displayImage)),
-            name: 'photos',
-            maxImages: 1,
-            previewAutoSizeWidth: true,
-            availableImageSources: const [ImageSourceOption.gallery],
-            onChanged: _onImage,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class AddOneAnswerDialog extends StatefulWidget {
-  final void Function(QuizItem, XFileImage?) onAdd;
-  final List<QuizItem> existingFlashcards;
-  const AddOneAnswerDialog(
-      {super.key, required this.onAdd, required this.existingFlashcards});
-
-  @override
-  State<AddOneAnswerDialog> createState() => _AddOneAnswerDialogState();
-}
-
-class _AddOneAnswerDialogState extends State<AddOneAnswerDialog> {
-  final _FormFieldError _errorNotifier = _FormFieldError();
-
-  @override
-  Widget build(BuildContext context) {
-    return _AddQuizItemDialog(
-      currentDropdownValue: OneAnswer.classValues,
-      errorMessage: "This item already exists",
-      errorNotifier: _errorNotifier,
-      onChanged: (type) =>
-          _onChange(context, type, widget.existingFlashcards, widget.onAdd),
-      onAdd: () {},
-      child: const Column(),
     );
   }
 }

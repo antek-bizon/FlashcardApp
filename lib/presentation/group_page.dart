@@ -3,6 +3,7 @@ import 'package:flashcards/cubits/groups.dart';
 import 'package:flashcards/data/models/classic_flashcard.dart';
 import 'package:flashcards/data/models/quiz_group.dart';
 import 'package:flashcards/presentation/exam_page.dart';
+import 'package:flashcards/presentation/widgets/dialogs/add_classic_flashcard_dialog.dart';
 import 'package:flashcards/presentation/widgets/dialogs/add_quiz_item.dart';
 import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:flashcards/presentation/presentation_page.dart';
@@ -12,7 +13,6 @@ import 'package:flashcards/presentation/widgets/default_body.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:form_builder_image_picker/form_builder_image_picker.dart';
 
 enum MenuItem {
   //  reorder,
@@ -56,23 +56,15 @@ class _GroupPageState extends State<GroupPage> {
     }
   }
 
-  void _onAddQuizItem(BuildContext context, QuizItem item, XFileImage? image) {
-    context.read<QuizItemCubit>().addQuizItem(
-        authState: authState(context),
-        group: widget.group,
-        item: item,
-        image: image);
-  }
-
   void _showAddDialog(BuildContext context) {
     // _endReoreder();
     showDialog<String>(
       context: context,
-      builder: (context) =>
-          BlocBuilder<QuizItemCubit, QuizItemState>(builder: (context, state) {
+      builder: (_) => BlocBuilder<QuizItemCubit, QuizItemState>(
+          builder: (builderContext, state) {
         if (state is SuccessItemState) {
           return AddClassicFlashcardDialog(
-            onAdd: (item, image) => _onAddQuizItem(context, item, image),
+            group: widget.group,
             existingFlashcards: state.flashcards,
           );
         } else {

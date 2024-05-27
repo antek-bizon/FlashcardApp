@@ -17,10 +17,16 @@ class OneAnswer implements QuizItemBody {
       required this.correctAnswer});
 
   factory OneAnswer.fromJson(Map<String, dynamic> json) {
+    if (!json.containsKey(_questionEntry) ||
+        !json.containsKey(_answersEntry) ||
+        !json.containsKey(_correctAnswerEntry)) {
+      throw "Invalid json data";
+    }
+
     return OneAnswer(
-      question: "question",
-      answers: ["answers"],
-      correctAnswer: 0,
+      question: json[_questionEntry],
+      answers: json[_answersEntry],
+      correctAnswer: json[_correctAnswerEntry],
     );
   }
 
@@ -32,4 +38,14 @@ class OneAnswer implements QuizItemBody {
       _correctAnswerEntry: correctAnswer
     };
   }
+
+  @override
+  int get hashCode => Object.hash(question, answers);
+
+  @override
+  bool operator ==(Object other) =>
+      other is OneAnswer &&
+      correctAnswer == other.correctAnswer &&
+      question == other.question &&
+      answers == other.answers;
 }

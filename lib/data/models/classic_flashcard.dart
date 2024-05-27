@@ -18,16 +18,16 @@ class ClassicFlashcard implements QuizItemBody {
     this.styles,
   });
 
-  factory ClassicFlashcard.fromJson(Map<String, dynamic> data) {
-    if (!data.containsKey(_questionEntry) || !data.containsKey(_answerEntry)) {
+  factory ClassicFlashcard.fromJson(Map<String, dynamic> json) {
+    if (!json.containsKey(_questionEntry) || !json.containsKey(_answerEntry)) {
       throw "Invalid json data";
     }
 
-    final String question = data[_questionEntry];
-    final String answer = data[_answerEntry];
-    final StylesList? styles = (data.containsKey(_stylesEntry))
+    final String question = json[_questionEntry];
+    final String answer = json[_answerEntry];
+    final StylesList? styles = (json.containsKey(_stylesEntry))
         ? StylesList.fromRanges(
-            List<List>.from(data[_stylesEntry] as List), answer.length)
+            List<List>.from(json[_stylesEntry] as List), answer.length)
         : null;
 
     return ClassicFlashcard(question: question, answer: answer, styles: styles);
