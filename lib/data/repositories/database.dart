@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flashcards/data/models/quiz_group.dart';
 import 'package:flashcards/data/models/quiz_item.dart';
+import 'package:flutter/foundation.dart';
 import 'package:form_builder_image_picker/form_builder_image_picker.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:http/http.dart' as http;
@@ -70,7 +71,7 @@ class DatabaseRepository {
     }
   }
 
-  Future<List<QuizItem>> getQuizItem(String groupId) async {
+  Future<(List<QuizItem>, String?)> getQuizItem(String groupId) async {
     try {
       if (groupId.trim().isEmpty) {
         throw "Cannot get quiz_items from server. Group id is null.";
@@ -81,24 +82,37 @@ class DatabaseRepository {
           .getFullList(filter: "group.id = '$groupId'");
 
       final result = <QuizItem>[];
+      int numOfErrors = 0;
 
       for (final e in dbResponse) {
-        final id = e.id;
-        final type = QuizItemType.values.elementAtOrNull(e.getIntValue("type"));
-        if (type == null) {
-          continue;
-        }
-        final json = e.getDataValue<Map<String, dynamic>>("data");
-        final imageFilename = e.getStringValue("image");
-        final imageUri = (imageFilename.isNotEmpty)
-            ? _pb.files.getUrl(e, imageFilename).toString()
-            : null;
+        try {
+          final id = e.id;
+          final type =
+              QuizItemType.values.elementAtOrNull(e.getIntValue("type"));
+          if (type == null) {
+            continue;
+          }
+          final json = e.getDataValue<Map<String, dynamic>>("data");
+          final imageFilename = e.getStringValue("image");
+          final imageUri = (imageFilename.isNotEmpty)
+              ? _pb.files.getUrl(e, imageFilename).toString()
+              : null;
 
-        result.add(QuizItem.fromJson(
-            type: type, json: json, id: id, imageUri: imageUri));
+          result.add(QuizItem.fromJson(
+              type: type, json: json, id: id, imageUri: imageUri));
+        } catch (e) {
+          if (kDebugMode) {
+            print(e);
+          }
+          numOfErrors += 1;
+        }
       }
 
-      return result;
+      final message = (numOfErrors > 0)
+          ? "The number of elemenets that failed: $numOfErrors"
+          : null;
+
+      return (result, message);
     } on ClientException catch (err) {
       throw err.response["message"].toString();
     }

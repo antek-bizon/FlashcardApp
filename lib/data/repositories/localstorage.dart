@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flashcards/data/models/quiz_group.dart';
 import 'package:flashcards/data/models/quiz_item.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalStorageRepository {
@@ -60,31 +61,43 @@ class LocalStorageRepository {
     }
   }
 
-  Future<List<QuizItem>> getQuizItem(String groupName) async {
+  Future<(List<QuizItem>, String?)> getQuizItem(String groupName) async {
     final flashcardsJson = _pref.getString(groupName);
 
-    if (flashcardsJson == null) return [];
+    if (flashcardsJson == null) return (<QuizItem>[], null);
 
     final List<QuizItem> flashcards = [];
+    int numOfErrors = 0;
 
     for (final Map<String, dynamic> e in jsonDecode(flashcardsJson) as List) {
-      if (!e.containsKey("type") || !e.containsKey("data")) {
-        continue;
+      try {
+        if (!e.containsKey("type") || !e.containsKey("data")) {
+          continue;
+        }
+
+        final typeIndex = e["type"] as int;
+        final type = QuizItemType.values[typeIndex];
+        final json = e["data"] as Map<String, dynamic>;
+        final imageUri = e["image"];
+
+        flashcards.add(QuizItem.fromJson(
+          type: type,
+          json: json,
+          imageUri: imageUri,
+        ));
+      } catch (e) {
+        if (kDebugMode) {
+          print(e);
+        }
+        numOfErrors += 1;
       }
-
-      final typeIndex = e["type"] as int;
-      final type = QuizItemType.values[typeIndex];
-      final json = e["data"] as Map<String, dynamic>;
-      final imageUri = e["image"];
-
-      flashcards.add(QuizItem.fromJson(
-        type: type,
-        json: json,
-        imageUri: imageUri,
-      ));
     }
 
-    return flashcards;
+    final message = (numOfErrors > 0)
+        ? "The number of elemenets that failed: $numOfErrors"
+        : null;
+
+    return (flashcards, message);
   }
 
   Future<void> updateJson(String groupName, List<QuizItem> flashcards) async {

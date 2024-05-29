@@ -20,7 +20,8 @@ class ErrorItemState extends QuizItemState {
 
 class SuccessItemState extends QuizItemState {
   final List<QuizItem> flashcards;
-  SuccessItemState(this.flashcards);
+  final String? message;
+  SuccessItemState(this.flashcards, {this.message});
 }
 
 class QuizItemCubit extends Cubit<QuizItemState> {
@@ -42,9 +43,11 @@ class QuizItemCubit extends Cubit<QuizItemState> {
         _lsr.getQuizItem(group.name)
       ];
       final results = await Future.wait(futures);
+      final quizItems = results.map((e) => e.$1).toList();
+      final message = results.map((e) => e.$2).nonNulls.toList().firstOrNull;
       _cards.clear();
-      _cards.addAll(_removeCardsDuplicates(results));
-      emit(SuccessItemState(_cards));
+      _cards.addAll(_removeCardsDuplicates(quizItems));
+      emit(SuccessItemState(_cards, message: message));
     });
   }
 
@@ -105,7 +108,7 @@ class QuizItemCubit extends Cubit<QuizItemState> {
   List<QuizItem> _removeCardsDuplicates(final List<List<QuizItem>> cards) {
     final cardsSet = cards.first.toSet();
     for (int i = 1; i < cards.length; i++) {
-      for (var e in cards[i]) {
+      for (final e in cards[i]) {
         if (!cardsSet.contains(e)) {
           cardsSet.add(e);
         }

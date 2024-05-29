@@ -1,4 +1,5 @@
 import 'package:flashcards/data/models/quiz_item.dart';
+import 'package:flutter/foundation.dart';
 
 class OneAnswer implements QuizItemBody {
   String question;
@@ -25,7 +26,7 @@ class OneAnswer implements QuizItemBody {
 
     return OneAnswer(
       question: json[_questionEntry],
-      answers: json[_answersEntry],
+      answers: List.from(json[_answersEntry]),
       correctAnswer: json[_correctAnswerEntry],
     );
   }
@@ -40,12 +41,12 @@ class OneAnswer implements QuizItemBody {
   }
 
   @override
-  int get hashCode => Object.hash(question, answers);
+  int get hashCode => Object.hash(question, correctAnswer, answers.length);
 
   @override
   bool operator ==(Object other) =>
       other is OneAnswer &&
       correctAnswer == other.correctAnswer &&
       question == other.question &&
-      answers == other.answers;
+      listEquals(answers, other.answers);
 }

@@ -10,7 +10,7 @@ class QuizListItemBody extends StatefulWidget {
   final QuizGroup group;
   final Widget child;
   final String? imageUri;
-  final bool Function(bool) onEdit;
+  final (bool, String?) Function(bool) onEdit;
   const QuizListItemBody({
     super.key,
     required this.index,
@@ -26,6 +26,7 @@ class QuizListItemBody extends StatefulWidget {
 
 class _QuizListItemBodyState extends State<QuizListItemBody> {
   bool _editable = false;
+  String? _errorMessage;
 
   Icon _editableIcon() {
     return (_editable) ? const Icon(Icons.save) : const Icon(Icons.edit);
@@ -58,12 +59,14 @@ class _QuizListItemBodyState extends State<QuizListItemBody> {
                       icon: _editableIcon(),
                       onPressed: () {
                         setState(() {
-                          final isEditable = widget.onEdit(_editable);
+                          final (isEditable, errorMessage) =
+                              widget.onEdit(_editable);
                           if (isEditable != _editable && !isEditable) {
                             context.read<QuizItemCubit>().updateQuizItem(
                                 authState(context), widget.group, widget.index);
                           }
                           _editable = isEditable;
+                          _errorMessage = errorMessage;
                         });
                       },
                     ),
@@ -77,6 +80,19 @@ class _QuizListItemBodyState extends State<QuizListItemBody> {
               )
             ],
           ),
+          Visibility(
+              visible: _errorMessage != null,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 35.0),
+                child: Text(
+                  _errorMessage ?? "",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.error),
+                ),
+              )),
           if (image != null)
             DropdownImage(
               image: image,

@@ -1,4 +1,5 @@
 import 'package:flashcards/data/models/classic_flashcard.dart';
+import 'package:flashcards/data/models/one_answer.dart';
 
 class QuizItem {
   String? id;
@@ -31,6 +32,8 @@ class QuizItem {
     switch (type) {
       case QuizItemType.classic:
         return ClassicFlashcard.fromJson(json);
+      case QuizItemType.oneAnswer:
+        return OneAnswer.fromJson(json);
       default:
         throw UnimplementedError("Type $type was not implemented yet");
     }

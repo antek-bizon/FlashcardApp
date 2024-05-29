@@ -1,13 +1,15 @@
 import 'package:flashcards/cubits/quiz_items.dart';
 import 'package:flashcards/cubits/groups.dart';
 import 'package:flashcards/data/models/classic_flashcard.dart';
+import 'package:flashcards/data/models/one_answer.dart';
 import 'package:flashcards/data/models/quiz_group.dart';
 import 'package:flashcards/presentation/exam_page.dart';
 import 'package:flashcards/presentation/widgets/dialogs/add_classic_flashcard_dialog.dart';
-import 'package:flashcards/presentation/widgets/dialogs/add_quiz_item.dart';
 import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:flashcards/presentation/presentation_page.dart';
 import 'package:flashcards/presentation/widgets/list_items/classic_flashcard.dart';
+import 'package:flashcards/presentation/widgets/list_items/one_answer.dart';
+import 'package:flashcards/presentation/widgets/my_snack_bar.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/presentation/widgets/default_body.dart';
 import 'package:flutter/foundation.dart';
@@ -82,7 +84,7 @@ class _GroupPageState extends State<GroupPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (context) => PresentationPage(flashcards: flashcardGroup)),
+          builder: (context) => PresentationPage(items: flashcardGroup)),
     );
   }
 
@@ -195,15 +197,23 @@ class _GroupPageState extends State<GroupPage> {
                     final item = flashcards[index];
                     // final cubit = context.read<QuizItemCubit>();
 
-                    if (item.data is ClassicFlashcard) {
-                      return ClassicFlashcardListItem(
-                        index: index,
-                        flashcard: item.data as ClassicFlashcard,
-                        group: widget.group,
-                        imageUri: item.imageUri,
-                      );
+                    switch (item.type) {
+                      case QuizItemType.classic:
+                        return ClassicFlashcardListItem(
+                          index: index,
+                          flashcard: item.data as ClassicFlashcard,
+                          group: widget.group,
+                          imageUri: item.imageUri,
+                        );
+                      case QuizItemType.oneAnswer:
+                        return OneAnswerListItem(
+                            index: index,
+                            item: item.data as OneAnswer,
+                            group: widget.group,
+                            imageUri: item.imageUri);
+                      default:
+                        return null;
                     }
-                    return null;
                   }),
             );
           } else if (state is ErrorItemState) {
@@ -229,10 +239,9 @@ class _GroupPageState extends State<GroupPage> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
-        // color: Theme.of(context).colorScheme.primary,
         shape: const CircularNotchedRectangle(),
         notchMargin: 10,
-        child: BlocBuilder<QuizItemCubit, QuizItemState>(
+        child: BlocConsumer<QuizItemCubit, QuizItemState>(
           builder: (context, state) {
             if (state is SuccessItemState) {
               final flashcards = state.flashcards;
@@ -282,6 +291,12 @@ class _GroupPageState extends State<GroupPage> {
               );
             } else {
               return const Center(child: LinearProgressIndicator());
+            }
+          },
+          listener: (context, state) {
+            if (state is SuccessItemState && state.message != null) {
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(quickSnack(state.message!));
             }
           },
         ),

@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flashcards/data/models/classic_flashcard.dart';
 import 'package:flashcards/data/models/quiz_item.dart';
-import 'package:flashcards/presentation/widgets/flashcard_widget.dart';
+import 'package:flashcards/presentation/widgets/presentation_widget/flashcard_widget.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/presentation/widgets/default_body.dart';
 import 'package:flutter/material.dart';

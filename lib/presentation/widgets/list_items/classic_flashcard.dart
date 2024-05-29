@@ -46,7 +46,7 @@ class _ClassicFlashcardListItemState extends State<ClassicFlashcardListItem> {
     super.dispose();
   }
 
-  bool _onEdit(bool wasEditable) {
+  (bool, String?) _onEdit(bool wasEditable) {
     if (wasEditable && _formKey.currentState!.validate()) {
       setState(() {
         widget.flashcard.question = _questionField.text;
@@ -55,14 +55,14 @@ class _ClassicFlashcardListItemState extends State<ClassicFlashcardListItem> {
 
         _editable = false;
       });
-      return false;
+      return (false, null);
     }
     if (!_editable) {
       setState(() {
         _editable = true;
       });
     }
-    return true;
+    return (true, null);
   }
 
   @override

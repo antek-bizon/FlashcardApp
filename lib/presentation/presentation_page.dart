@@ -2,15 +2,15 @@ import 'dart:math';
 
 import 'package:flashcards/data/models/classic_flashcard.dart';
 import 'package:flashcards/data/models/quiz_item.dart';
-import 'package:flashcards/presentation/widgets/flashcard_widget.dart';
+import 'package:flashcards/presentation/widgets/presentation_widget/flashcard_widget.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/presentation/widgets/default_body.dart';
 import 'package:flutter/material.dart';
 
 class PresentationPage extends StatefulWidget {
-  const PresentationPage({super.key, required this.flashcards});
+  const PresentationPage({super.key, required this.items});
 
-  final List<QuizItem> flashcards;
+  final List<QuizItem> items;
 
   @override
   State<PresentationPage> createState() => _PresentationPageState();
@@ -28,7 +28,7 @@ class _PresentationPageState extends State<PresentationPage> {
   }
 
   void _nextPage() {
-    if (_controller.page!.toInt() < widget.flashcards.length - 1) {
+    if (_controller.page!.toInt() < widget.items.length - 1) {
       _animation = true;
       _controller
           .nextPage(
@@ -63,7 +63,7 @@ class _PresentationPageState extends State<PresentationPage> {
             Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => PresentationPage(flashcards: list)));
+                    builder: (context) => PresentationPage(items: list)));
           },
         ),
         TextButton(
@@ -101,7 +101,7 @@ class _PresentationPageState extends State<PresentationPage> {
 
   void _incorrect() {
     if (!_animation) {
-      _incorrectAnswers.add(widget.flashcards[_controller.page!.toInt()]);
+      _incorrectAnswers.add(widget.items[_controller.page!.toInt()]);
       _nextPage();
     }
   }
@@ -113,15 +113,24 @@ class _PresentationPageState extends State<PresentationPage> {
       body: DefaultBody(
         child: PageView(
           controller: _controller,
-          children: widget.flashcards
-              .where((e) => e.data is ClassicFlashcard)
-              .map((e) => Padding(
-                    padding: const EdgeInsets.all(50.0),
-                    child: FlashcardWidget(
-                      item: e.data as ClassicFlashcard,
-                      imageUri: e.imageUri,
-                    ),
-                  ))
+          children: widget.items
+              .map((e) {
+                switch (e.type) {
+                  case QuizItemType.classic:
+                    return Padding(
+                      padding: const EdgeInsets.all(50.0),
+                      child: FlashcardWidget(
+                        item: e.data as ClassicFlashcard,
+                        imageUri: e.imageUri,
+                      ),
+                    );
+                  case QuizItemType.oneAnswer:
+                    return null;
+                  default:
+                    return null;
+                }
+              })
+              .nonNulls
               .toList(growable: false),
         ),
       ),
