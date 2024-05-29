@@ -1,8 +1,10 @@
 import 'dart:math';
 
 import 'package:flashcards/data/models/classic_flashcard.dart';
+import 'package:flashcards/data/models/one_answer.dart';
 import 'package:flashcards/data/models/quiz_item.dart';
 import 'package:flashcards/presentation/widgets/presentation_widget/flashcard_widget.dart';
+import 'package:flashcards/presentation/widgets/presentation_widget/one_answer_widget.dart';
 import 'package:flashcards/utils.dart';
 import 'package:flashcards/presentation/widgets/default_body.dart';
 import 'package:flutter/material.dart';
@@ -113,25 +115,22 @@ class _PresentationPageState extends State<PresentationPage> {
       body: DefaultBody(
         child: PageView(
           controller: _controller,
-          children: widget.items
-              .map((e) {
-                switch (e.type) {
-                  case QuizItemType.classic:
-                    return Padding(
-                      padding: const EdgeInsets.all(50.0),
-                      child: FlashcardWidget(
-                        item: e.data as ClassicFlashcard,
-                        imageUri: e.imageUri,
-                      ),
-                    );
-                  case QuizItemType.oneAnswer:
-                    return null;
-                  default:
-                    return null;
-                }
-              })
-              .nonNulls
-              .toList(growable: false),
+          children: widget.items.map<Widget>((e) {
+            switch (e.type) {
+              case QuizItemType.classic:
+                return FlashcardWidget(
+                  item: e.data as ClassicFlashcard,
+                  imageUri: e.imageUri,
+                );
+              case QuizItemType.oneAnswer:
+                return OneAnswerWidget(
+                  item: e.data as OneAnswer,
+                  imageUri: e.imageUri,
+                );
+              // default:
+              //   return null;
+            }
+          }).toList(growable: false),
         ),
       ),
       bottomNavigationBar: BottomAppBar(

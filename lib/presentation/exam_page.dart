@@ -1,86 +1,73 @@
 import 'dart:math';
 
 import 'package:flashcards/data/models/classic_flashcard.dart';
+import 'package:flashcards/data/models/classic_flashcard_exam_item.dart';
+import 'package:flashcards/data/models/exam_data.dart';
+import 'package:flashcards/data/models/one_answer.dart';
+import 'package:flashcards/data/models/one_answer_exam_item.dart';
 import 'package:flashcards/data/models/quiz_item.dart';
-import 'package:flashcards/presentation/widgets/presentation_widget/flashcard_widget.dart';
-import 'package:flashcards/utils.dart';
 import 'package:flashcards/presentation/widgets/default_body.dart';
 import 'package:flutter/material.dart';
 
-enum ExamItemState { none, correct, wrong }
-
-class ExamItem extends ClassicFlashcard {
-  ExamItemState state = ExamItemState.none;
-  ExamItem({required ClassicFlashcard flashcard, String? imageUri})
-      : super(
-          question: flashcard.question,
-          answer: flashcard.answer,
-        );
-}
-
-class WrongAnswer extends ClassicFlashcard {
-  final String userAnswer;
-  WrongAnswer({required ClassicFlashcard flashcard, required this.userAnswer})
-      : super(question: flashcard.question, answer: flashcard.answer);
-}
-
-// ignore: must_be_immutable
 class ExamPage extends StatefulWidget {
-  final List<ExamItem> examItems;
+  final List<QuizItem> items;
+  static const correctAnswerColor = Colors.lightGreen;
+  static const wrongAnswerColor = Colors.red;
 
-  ExamPage({super.key, required List<QuizItem> items})
-      : examItems = items
-            .where((e) => e.data is ClassicFlashcard)
-            .map((e) => ExamItem(flashcard: e.data as ClassicFlashcard))
-            .toList(growable: false)
-          ..shuffle();
+  const ExamPage({super.key, required this.items});
 
   @override
   State<ExamPage> createState() => _ExamPageState();
 }
 
 class _ExamPageState extends State<ExamPage> {
+  late List<ExamItem> _items;
   final _controller = PageController();
-  late List<GlobalKey<FormState>> _formKeys;
-  late List<TextEditingController> _textFields;
   final List<WrongAnswer> _wrongAnswers = [];
   var answered = false;
   var score = 0;
 
   @override
   void initState() {
-    _formKeys = List.generate(
-        widget.examItems.length, (_) => GlobalKey<FormState>(),
-        growable: false);
-    _textFields = List.generate(
-        widget.examItems.length, (_) => TextEditingController(),
-        growable: false);
+    _items = widget.items.map<ExamItem>((e) {
+      switch (e.type) {
+        case QuizItemType.classic:
+          return ClassicFlashcardExamItem(
+              data: e.data as ClassicFlashcard, imageUri: e.imageUri);
+        case QuizItemType.oneAnswer:
+          return OneAnswerExamItem(
+              data: e.data as OneAnswer, imageUri: e.imageUri);
+      }
+    }).toList();
     super.initState();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
-    for (var e in _textFields) {
-      e.dispose();
+    for (final item in _items) {
+      item.dispose();
     }
+    _controller.dispose();
     super.dispose();
   }
 
   void _checkAnswer() {
     final currentPage = _controller.page!.toInt();
-    if (_formKeys[currentPage].currentState!.validate()) {
-      final examItem = widget.examItems[currentPage];
-      final isAnswerCorrect = _textFields[currentPage].text.toLowerCase() ==
-          examItem.answer.toLowerCase();
+    final examItem = _items[currentPage];
+    final validAnswer = examItem.isAnswerCorrect();
+    if (validAnswer != null) {
+      final (isAnswerCorrect, correctAnswer, userAnswer) = validAnswer;
       setState(() {
-        examItem.state =
-            (isAnswerCorrect) ? ExamItemState.correct : ExamItemState.wrong;
-        if (isAnswerCorrect) {
+        examItem.state = (isAnswerCorrect == true)
+            ? ExamItemState.correct
+            : ExamItemState.wrong;
+        if (isAnswerCorrect == true) {
           score += 1;
         } else {
           _wrongAnswers.add(WrongAnswer(
-              flashcard: examItem, userAnswer: _textFields[currentPage].text));
+            correctAnswer: correctAnswer,
+            userAnswer: userAnswer,
+          ));
         }
         answered = true;
       });
@@ -113,7 +100,7 @@ class _ExamPageState extends State<ExamPage> {
             itemBuilder: (context, index) {
               final data = _wrongAnswers[index];
               return Row(children: [
-                _AnswerListItem(data.answer),
+                _AnswerListItem(data.correctAnswer),
                 _AnswerListItem(data.userAnswer)
               ]);
             },
@@ -124,7 +111,7 @@ class _ExamPageState extends State<ExamPage> {
   }
 
   void _tryNextPage() {
-    if (_controller.page!.toInt() < widget.examItems.length - 1) {
+    if (_controller.page!.toInt() < _items.length - 1) {
       setState(() {
         answered = false;
       });
@@ -169,10 +156,8 @@ class _ExamPageState extends State<ExamPage> {
             onPressed: _checkAnswer,
             icon: const Icon(Icons.check))
         : IconButton(
-            onPressed: () {
-              _tryNextPage();
-            },
-            icon: const Icon(Icons.arrow_forward_ios_rounded));
+            onPressed: _tryNextPage,
+            icon: const Icon(Icons.arrow_forward_rounded));
   }
 
   @override
@@ -186,51 +171,11 @@ class _ExamPageState extends State<ExamPage> {
         centerTitle: true,
       ),
       body: DefaultBody(
-        child: PageView(
-          physics: const NeverScrollableScrollPhysics(),
+        child: PageView.builder(
+          itemBuilder: (context, index) => ExamListItem(item: _items[index]),
+          itemCount: _items.length,
           controller: _controller,
-          children: List.generate(widget.examItems.length, (index) {
-            final e = widget.examItems[index];
-
-            return (Padding(
-              padding: const EdgeInsets.only(
-                  left: 50.0, right: 50.0, top: 25.0, bottom: 50.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  Form(
-                      key: _formKeys[index],
-                      child: TextFormField(
-                        controller: _textFields[index],
-                        enabled: !answered,
-                        decoration: const InputDecoration(
-                            hintText: "Answer",
-                            contentPadding: EdgeInsets.only(left: 5)),
-                        validator: (String? value) {
-                          if (value == null || value.isEmpty) {
-                            return "Please enter some answer";
-                          }
-                          return null;
-                        },
-                      )),
-                  addSpacing(height: 25),
-                  Expanded(
-                    child: FlashcardDraft(
-                      item: e,
-                      // question: e.question,
-                      // answer: e.answer,
-                      // imageUri: e.imageUri,
-                      // textStyle: e.styleList,
-                      showFront: e.state == ExamItemState.none,
-                      backColor: e.state == ExamItemState.wrong
-                          ? Colors.red
-                          : Colors.lightGreen,
-                    ),
-                  ),
-                ],
-              ),
-            ));
-          }),
+          physics: const NeverScrollableScrollPhysics(),
         ),
       ),
       bottomNavigationBar: BottomAppBar(
@@ -239,6 +184,24 @@ class _ExamPageState extends State<ExamPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [_bottomButton()]),
       ),
+    );
+  }
+}
+
+class ExamListItem extends StatelessWidget {
+  const ExamListItem({
+    super.key,
+    required ExamItem item,
+  }) : _item = item;
+
+  final ExamItem _item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(
+          left: 50.0, right: 50.0, top: 25.0, bottom: 50.0),
+      child: _item.widget,
     );
   }
 }

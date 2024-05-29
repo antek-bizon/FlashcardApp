@@ -89,8 +89,8 @@ class _AddOneAnswerDialogState extends State<AddOneAnswerDialog> {
         final item = QuizItem(
           type: QuizItemType.oneAnswer,
           data: OneAnswer(
-              question: _questionField.text,
-              answers: _controllers.map((e) => e.text).toList(),
+              question: _questionField.text.trim(),
+              answers: _controllers.map((e) => e.text.trim()).toList(),
               correctAnswer: _selectedAnswerIndex!),
         );
 

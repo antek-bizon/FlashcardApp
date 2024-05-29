@@ -31,7 +31,7 @@ class MultiLineTextField extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
       ),
       validator: (String? value) {
-        if (value == null || value.isEmpty) {
+        if (value == null || value.trim().isEmpty) {
           return validatorText;
         }
         return null;

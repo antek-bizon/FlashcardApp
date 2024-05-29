@@ -45,6 +45,14 @@ class _AddClassicFlashcardDialogState extends State<AddClassicFlashcardDialog> {
     }
   }
 
+  // (String, int, int) _trim(String input) {
+  //   final trimmedLeft = input.trimLeft();
+  //   final diffLeft = input.length - trimmedLeft.length;
+  //   final trimmed = trimmedLeft.trimRight();
+  //   final diffRight = trimmedLeft.length - trimmed.length;
+  //   return (trimmed, diffLeft, diffRight);
+  // }
+
   @override
   Widget build(BuildContext context) {
     return AddQuizItemBodyDialog(
@@ -54,10 +62,14 @@ class _AddClassicFlashcardDialogState extends State<AddClassicFlashcardDialog> {
       onChanged: (type) =>
           onChange(context, type, widget.existingFlashcards, widget.group),
       onAdd: () {
+        // final (answer, diffLeft, diffRight) = _trim(_answerField.text);
+
         final item = QuizItem(
           type: QuizItemType.classic,
           data: ClassicFlashcard(
-              question: _questionField.text, answer: _answerField.text),
+            question: _questionField.text.trim(),
+            answer: _answerField.text,
+          ),
         );
 
         if (widget.existingFlashcards.contains(item)) {

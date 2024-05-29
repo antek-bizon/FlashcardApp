@@ -128,22 +128,7 @@ class _OneAnswerListItemState extends State<OneAnswerListItem> {
                       shrinkWrap: true,
                       itemCount: _controllers.length,
                       itemBuilder: (context, index) {
-                        final radio = (!_editable)
-                            ? (index == _selectedAnswerIndex)
-                                ? Icon(
-                                    Icons.check,
-                                    color: disabledColor,
-                                  )
-                                : Icon(Icons.minimize, color: disabledColor)
-                            : Radio<int>(
-                                value: index,
-                                groupValue: _selectedAnswerIndex,
-                                onChanged: (int? value) {
-                                  setState(() {
-                                    _selectedAnswerIndex = value;
-                                  });
-                                },
-                              );
+                        final radio = _radio(index, disabledColor);
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -190,5 +175,25 @@ class _OneAnswerListItemState extends State<OneAnswerListItem> {
             ),
           ),
         ));
+  }
+
+  Widget _radio(int index, Color disabledColor) {
+    final radio = (!_editable)
+        ? (index == _selectedAnswerIndex)
+            ? Icon(
+                Icons.check,
+                color: disabledColor,
+              )
+            : Icon(Icons.minimize, color: disabledColor)
+        : Radio<int>(
+            value: index,
+            groupValue: _selectedAnswerIndex,
+            onChanged: (int? value) {
+              setState(() {
+                _selectedAnswerIndex = value;
+              });
+            },
+          );
+    return radio;
   }
 }
